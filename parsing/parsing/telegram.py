@@ -4,15 +4,19 @@ from parsing.main import StepsFind
 from typing import Dict
 from parsing.message import MsgAnswer
 from parsing.tasks_base import StepsTasks
-from msguser import MsgUser
-from tasks_base import TimeTask
+from parsing.msguser import MsgUser
+from parsing.tasks_base import TimeTask
+import platform
 
 import enum
 
 from dotenv import load_dotenv
 import os
 
-load_dotenv('../secrets.env')
+BASE_PATH = '../secrets.env'
+if platform.system().startswith('L'):
+    BASE_PATH = 'secrets.env'  # если запускать с Linux python3 start.py
+load_dotenv(BASE_PATH)
 
 
 class ChatMode(enum.Enum):
@@ -30,7 +34,6 @@ CMD_TASK = '/task'
 CMD_START = '/start'
 CMD_HELP = '/help'
 CMDS = [CMD_FIND, CMD_TASK, CMD_START, CMD_HELP]
-
 
 API_TOKEN = os.getenv('API_TOKEN')
 bot = telebot.TeleBot(API_TOKEN)
