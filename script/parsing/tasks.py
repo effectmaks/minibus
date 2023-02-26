@@ -1,6 +1,6 @@
 import datetime
 
-from parsing.base.tasks import Look
+from parsing.base.tasks import Tasks
 from parsing.base.settings import Settings
 
 from parsing.cities import DownloadCities
@@ -33,7 +33,7 @@ class StepsTasks(MsgControl):
         :return:
         """
         try:
-            tasks = Look.select().where(Look.id_chat == id_chat).order_by(Look.date, Look.info).execute()
+            tasks = Tasks.select().where(Tasks.id_chat == id_chat).order_by(Tasks.date, Tasks.info).execute()
             count = len(tasks)
             for task_item, id_chat in zip(tasks, range(1, count + 1)):
                 task = self.create_info_task(id_chat, task_item.id, task_item.date,
@@ -92,9 +92,9 @@ class StepsTasks(MsgControl):
         """
         try:
             print(f'Выгрузка заданий c рейсами со свободными местами')
-            return Look.select(Look.id, Look.id_chat, Look.date, Look.id_from_city,
-                               Look.id_to_city, Look.info, Look.id_msg_delete) \
-                .where(Look.have_place == True).order_by(Look.date).execute()
+            return Tasks.select(Tasks.id, Tasks.id_chat, Tasks.date, Tasks.id_from_city,
+                                Tasks.id_to_city, Tasks.info, Tasks.id_msg_delete) \
+                .where(Tasks.have_place == True).order_by(Tasks.date).execute()
         except Exception as e:
             print(f'Ошибка выгрузки c базы. {str(e)}')
 
@@ -106,8 +106,8 @@ class StepsTasks(MsgControl):
         """
         try:
             print(f'Выгрузка ID сообщения которое надо удалить')
-            looks = Look.select(Look.id_msg_delete) \
-                .where(Look.id_chat == id_chat, Look.id == id_look).execute()
+            looks = Tasks.select(Tasks.id_msg_delete) \
+                .where(Tasks.id_chat == id_chat, Tasks.id == id_look).execute()
             for l in looks:
                 return l.id_msg_delete
         except Exception as e:
@@ -119,8 +119,8 @@ class StepsTasks(MsgControl):
         Обновить ID отправленного сообщения
         """
         try:
-            Look.update({Look.id_msg_delete: id_delete}) \
-                .where(Look.id == id_base).execute()
+            Tasks.update({Tasks.id_msg_delete: id_delete}) \
+                .where(Tasks.id == id_base).execute()
         except Exception as e:
             print(f'Ошибка обновить id_base {id_base}, id_msg {id_delete} {str(e)}')
 
@@ -130,7 +130,7 @@ class StepsTasks(MsgControl):
         Удалить задание с ID
         """
         try:
-            Look.delete().where(Look.id == id_base).execute()
+            Tasks.delete().where(Tasks.id == id_base).execute()
         except Exception as e:
             print(f'Ошибка удалить id_base {id_base} {str(e)}')
             raise Exception(f'Ошибка: Слежение не удалено.\nПовторите ввод числа.')
@@ -144,12 +144,12 @@ class StepsTasks(MsgControl):
         look = None
         try:
             print(f'Задание на слежение с базы которое выбрал пользователь')
-            look = Look.select(Look.id) \
-                .where(Look.id_chat == id_chat,
-                       Look.date == date,
-                       Look.id_from_city == id_city_from,
-                       Look.id_to_city == id_city_to,
-                       Look.info == info).execute()
+            look = Tasks.select(Tasks.id) \
+                .where(Tasks.id_chat == id_chat,
+                       Tasks.date == date,
+                       Tasks.id_from_city == id_city_from,
+                       Tasks.id_to_city == id_city_to,
+                       Tasks.info == info).execute()
         except Exception as e:
             print(f'Ошибка выгрузки c базы. {str(e)}')
         for _ in look:
@@ -207,8 +207,8 @@ class RunTask:
         """
         try:
             print(f'Выгрузка заданий c базы на {date}')
-            return Look.select(Look.date, Look.id_from_city, Look.id_to_city, Look.info, Look.have_place).distinct() \
-                .where(Look.date == date).order_by(Look.date, Look.id_from_city).execute()
+            return Tasks.select(Tasks.date, Tasks.id_from_city, Tasks.id_to_city, Tasks.info, Tasks.have_place).distinct() \
+                .where(Tasks.date == date).order_by(Tasks.date, Tasks.id_from_city).execute()
         except Exception as e:
             print(f'Ошибка выгрузки c базы. {str(e)}')
 
@@ -234,9 +234,9 @@ class RunTask:
         Обновление рейсов в базе в которых есть места
         """
         try:
-            Look.update({Look.have_place: have_place}) \
-                .where(Look.date == date, Look.id_from_city == city_from,
-                       Look.id_to_city == city_to, Look.info == info) \
+            Tasks.update({Tasks.have_place: have_place}) \
+                .where(Tasks.date == date, Tasks.id_from_city == city_from,
+                       Tasks.id_to_city == city_to, Tasks.info == info) \
                 .execute()
         except Exception as e:
             print(f'Ошибка обновления на рейс {date}, {city_from}, {city_to}. {str(e)}')

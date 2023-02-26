@@ -3,7 +3,7 @@ from parsing.cities import DownloadCities
 from parsing.dates import Dates
 from parsing.message import MsgAnswer, MsgControl
 from parsing.exception import ExceptionMsg
-from parsing.base.tasks import Look
+from parsing.base.tasks import Tasks
 from parsing.tasks import StepsTasks
 
 
@@ -93,11 +93,11 @@ class StepsFind(MsgControl):
             StepsTasks.check_task_mirror(chat_id, self._date_choose, self._id_city_from, self._id_city_to,
                                          route.info_short)
             try:
-                Look.create(id_chat=chat_id,
-                            date=self._date_choose,
-                            id_from_city=self._id_city_from,
-                            id_to_city=self._id_city_to,
-                            info=route.info_short)
+                Tasks.create(id_chat=chat_id,
+                             date=self._date_choose,
+                             id_from_city=self._id_city_from,
+                             id_to_city=self._id_city_to,
+                             info=route.info_short)
                 self.b_end = True
                 return MsgAnswer('', f'Создано задание на слежение\n'
                                      f'{route.info}.')
