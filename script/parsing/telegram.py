@@ -6,8 +6,9 @@ from parsing.message import MsgAnswer
 from parsing.tasks import StepsTasks
 from parsing.msguser import MsgUser
 from parsing.tasks import TimeTask
-import platform
+from parsing.exception import ExceptionMsg
 
+import platform
 import enum
 
 from dotenv import load_dotenv
@@ -123,8 +124,12 @@ def bot_step(message, func_step, func_now, func_next):
         if run_command(message):
             return
         msg: MsgAnswer = func_step(chat_id, message.text)
-    except Exception as e:
+    except ExceptionMsg as e:
         send_message_func(chat_id, MsgAnswer('', str(e)), func_now)
+        return
+    except Exception as e:
+        print(str(e))
+        send_message_func(chat_id, MsgAnswer('', 'Ошибка: Разбираемся!'), func_now)
         return
     send_message_func(chat_id, msg, func_next)
 
@@ -199,7 +204,7 @@ def delete_message(id_chat, id_msg_delete):
     try:
         bot.delete_message(id_chat, id_msg_delete)
     except Exception as e:
-        print(f'Ошибка удаления сообщения chat {id_chat} msg {id_msg_delete} {str(e)}')
+        raise Exception(f'Ошибка удаления сообщения chat {id_chat} msg {id_msg_delete} {str(e)}')
 
 
 @bot.message_handler(content_types=['text'])

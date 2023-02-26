@@ -4,6 +4,8 @@ import json
 import enum
 from parsing.exception import ExceptionMsg
 from typing import List
+from parsing.base.task import Task
+from parsing.base.usertask import Usertask
 
 
 class PlaceMode(enum.Enum):
@@ -77,11 +79,14 @@ class Route:
         self.duration: str
         self.full_car: str = ""
         self.id: str = ""
+        self.have_task: bool = False
 
     @property
     def info(self):
         close = '🟢'
-        if self.full_car:
+        if self.have_task:
+            close = "🟡"
+        elif self.full_car:
             close = "🔴"
         return f'{self.id if int(self.id) > 9 else " " + self.id} : {close} ' \
                f'{self.place_from.time}-{self.place_to.time} ({self.duration})'
@@ -89,6 +94,10 @@ class Route:
     @property
     def info_short(self):
         return f'({self.place_from.time}-{self.place_to.time})'
+
+    @property
+    def time_from(self):
+        return f'{self.place_from.time}'
 
     @property
     def title(self):
@@ -115,11 +124,13 @@ class DownloadRoutes:
     """
     Скачивает информацию рейсов
     """
-    def __init__(self, day, id_from, id_to):
+    def __init__(self, day, id_from, id_to, id_chat: int = 0):
         self._route_one: Route
         self._routes_list: List[Route] = list()
         self._dates_route: list = list()
         self._download_routes(day, id_from, id_to)
+        if id_chat:
+            self._set_point_yellow(id_chat, day, id_from, id_to)
 
     @property
     def list(self):
@@ -153,54 +164,10 @@ class DownloadRoutes:
             print('Заполнить данные маршрута')
             page_html = self._get_page_html(day, id_from, id_to)
             self._parse_route(page_html)
-            #self._parse_dates(page_html)
         except ExceptionMsg as e:
             raise ExceptionMsg(str(e))
         except Exception as e:
-            print("Ошибка! При переборе маршрутов", e)
-
-    def _get_dates_html(self, page_html):
-        """
-        Запрос на сервер.
-        Все части HTML с датами поездки
-        :return: HTML list
-        """
-        print('Все части HTML с датами поездки')
-        swiper = page_html.find('div', class_='nf-dates-carousel')
-        items_swipers = swiper.find_all('div', class_='swiper-slide')
-        if items_swipers is None:
-            raise Exception('Ошибка, не получилось извлечь swiper-slide')
-        return items_swipers
-
-    def _parse_dates(self, page_html):
-        """
-        Заполнить даты для выбора
-        :param page_html: Страница ответа сервера с данными
-        """
-        print('Формирует список дат для пользователя')
-        for date_one_html in self._get_dates_html(page_html):
-            self._parse_date_one_html(date_one_html)
-
-    def _parse_date_one_html(self, date_one_html):
-        """
-        Формирует список дат для пользователя
-        :param date_html: Часть страницы с одной датой
-        """
-        try:
-            disabled = date_one_html.find('div', class_='is-disabled')
-            if disabled:
-                return
-            date_h = date_one_html.find('div', class_='nf-dates-item js_change_date')
-            if not date_h:
-                date_h = date_one_html.find('div', class_='nf-dates-item js_change_date is-active')
-            date_format = date_h['data-date']
-            week_h = date_one_html.find('div', class_='hide-desktop')
-            if date_format and week_h:
-                self._dates_route.append(DateRoute(date_format, week_h.string.upper()))
-            else:
-                raise Exception('не получилось извлечь дату и неделю')
-        except Exception as e:
-            print(f'Ошибка извлечения даты {e}')
+            raise Exception(f"Ошибка! При переборе маршрутов {str(e)}")
 
     def _parse_route(self, page_html):
         """
@@ -225,7 +192,7 @@ class DownloadRoutes:
             self._full_places_from_to(container_html)
             self._full_duration_full_car(container_html)
         except Exception as e:
-            print(f'Ошибка извлечения информации о маршруте {e}')
+            raise Exception(f'Ошибка извлечения информации о маршруте {str(e)}')
 
     def _get_page_html(self, day, id_from, id_to):
         """
@@ -306,14 +273,36 @@ class DownloadRoutes:
         if full_car:
             self._route_one.full_car = full_car.string
 
+    def _set_point_yellow(self, id_chat, day, id_from, id_to):
+        """
+        Пометить маршруты, которые пользователь в этот день уже отслеживает
+        """
+        usertasks = Usertask.select().join(Task).where(Usertask.id_chat == id_chat,
+                                                       Task.date == day,
+                                                       Task.id_from_city == id_from,
+                                                       Task.id_to_city == id_to).execute()
+        for usertask in usertasks:
+            self._set_have_task(usertask.task.info)
+
+    def _set_have_task(self, info_short):
+        """
+        Пометить этот маршрут пользователь уже отслеживает
+        """
+        for route in self._routes_list:
+            if route.info_short == info_short:
+                route.have_task = True
+
+    def check_task_route(self, info_short):
+        """
+        Проверка что пользователь выбрал, такое же задания на слежения
+        :return:
+        """
+
+        print(f'Проверить что у пользователя нет этого задания выбрал пользователь')
+        for route in self._routes_list:
+            if route.info_short == info_short and route.have_task:
+                raise ExceptionMsg('Ошибка: Это рейс вы уже отслеживаете!\nВведите другой номер рейса.')
+
 
 if __name__ == '__main__':
-    download_routes = DownloadRoutes()
-    routes = download_routes.list
-    s_out = routes[0].title + '\n'
-    s_out += '\n'.join([r.info for r in routes])
-    print(s_out)
-
-    dates = download_routes.dates_route
-    s_out = '\n'.join([r.info for r in dates])
-    print(s_out)
+    pass

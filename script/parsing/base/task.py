@@ -1,22 +1,21 @@
 from parsing.base.base_sql import ConnectSqlite
-from peewee import IntegerField, TextField, BooleanField, Model
+from peewee import IntegerField, TextField, BooleanField, TimeField, Model
 
 
-class Tasks(Model):
+class Task(Model):
     """
     База данных таблица городов
     """
     id = IntegerField()
-    id_chat = IntegerField()
     date = TextField()
     id_from_city = IntegerField()
     id_to_city = IntegerField()
     info = TextField()
     have_place = BooleanField()
-    id_msg_delete = IntegerField()
+    time_from = TimeField()
 
     class Meta:
-        table_name = 'tasks'
+        table_name = 'task'
         database = ConnectSqlite.get_connect()
 
     def __str__(self):
