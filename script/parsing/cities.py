@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import enum
-from parsing.base_sql import Cities
+from parsing.base.cities import Cities
 
 
 class DownloadCities:
@@ -22,7 +22,6 @@ class DownloadCities:
             cities_list = [f'{c.name}' for c in cities]
             return ''.join(cities_list)
 
-
     def download_cities_from(self):
         """
         Заполнить города выезда и их id
@@ -34,7 +33,7 @@ class DownloadCities:
                 name_city = option.string.strip()
                 self._update_base_city(id_city=id_city, name_city=name_city)
         except Exception as e:
-            print("Ошибка! При переборе городов", e)
+            raise Exception(f"Ошибка! При переборе городов {str(e)}")
 
     def download_cities_to(self, id):
         """
@@ -46,7 +45,7 @@ class DownloadCities:
             self._update_base_cities_to(cities)
             return self._sort_cities_values(cities)
         except Exception as e:
-            print("Ошибка! При переборе городов", e)
+            raise Exception(f"Ошибка! При переборе городов {str(e)}")
 
     def _update_base_city(self, id_city, name_city):
         """
@@ -63,7 +62,7 @@ class DownloadCities:
             else:
                 Cities.update({Cities.name: name_city}).where(Cities.id == id_city).execute()
         except Exception as e:
-            print(f'Ошибка извлечения информации о городе {e}')
+            raise Exception(f'Ошибка извлечения информации о городе {str(e)}')
 
     def _get_city_from_id_html(self):
         """
@@ -132,8 +131,5 @@ class DownloadCities:
             raise Exception('Не совпадает количество до сортировки и после')
 
 
-
 if __name__ == '__main__':
-    down_cities = DownloadCities()
-    down_cities.download_cities_from()
-    print(down_cities.download_cities_to(22))
+    DownloadCities().download_cities_from()  # Обновление ID остановок

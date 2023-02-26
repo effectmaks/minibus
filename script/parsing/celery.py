@@ -34,4 +34,3 @@ app.conf.beat_schedule = {
         'schedule': 60 * 60 * 24,
     },
 }
-

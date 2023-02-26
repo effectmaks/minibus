@@ -3,8 +3,8 @@ from parsing.cities import DownloadCities
 from parsing.dates import Dates
 from parsing.message import MsgAnswer, MsgControl
 from parsing.exception import ExceptionMsg
-from parsing.base_sql import Look
-from parsing.tasks_base import StepsTasks
+from parsing.base.task import Task
+from parsing.tasks import StepsTasks
 
 
 class StepsFind(MsgControl):
@@ -34,7 +34,7 @@ class StepsFind(MsgControl):
         """
         self._date_choose = self._dates.get_day_dict(id)
         if not self._date_choose:
-            raise Exception('Ошибка: Введите число из списка!')
+            raise ExceptionMsg('Ошибка: Введите число из списка!')
         self._serv_cities = DownloadCities()
         return MsgAnswer(f'Дата: {self._dates.get_short_info(self._date_choose)}',
                          f'Список остановок выезда:\n─────👀───────────\n'
@@ -49,7 +49,7 @@ class StepsFind(MsgControl):
         """
         s_out = self._serv_cities.download_cities_to(id)
         if not s_out:
-            raise Exception('Ошибка: Введите число из списка!')
+            raise ExceptionMsg('Ошибка: Введите число из списка!')
         self._id_city_from = id
         city_choose = self._serv_cities.cities(id)
         return MsgAnswer(f'Из пункта: {city_choose}', f'Список остановок приезда:\n─────👀───────────\n{s_out}'
@@ -64,16 +64,16 @@ class StepsFind(MsgControl):
 
     def _s4_city_to_check(self, chat_id, id):
         if id == self._id_city_from:
-            raise Exception('Ошибка: Не должны повторяться города!\nВведите число.')
+            raise ExceptionMsg('Ошибка: Не должны повторяться города!\nВведите число.')
         city_choose = self._serv_cities.cities(id)
         if not city_choose:
-            raise Exception('Ошибка: Введите число!')
+            raise ExceptionMsg('Ошибка: Введите число!')
         return MsgAnswer(f'В пункт: {city_choose}', '')
 
     def _s4_city_to_print(self, chat_id, id):
         self._id_city_to = id
         try:
-            self._down_routes = DownloadRoutes(self._date_choose, self._id_city_from, self._id_city_to)
+            self._down_routes = DownloadRoutes(self._date_choose, self._id_city_from, self._id_city_to, id_chat=chat_id)
         except ExceptionMsg as e:
             self.b_end = True
             return MsgAnswer('', f'Ошибка: {str(e)}.')
@@ -82,6 +82,7 @@ class StepsFind(MsgControl):
             return MsgAnswer('', 'Ошибка: Нет данных!')
         s_out = '\n────────👀────────\nВыберите номер рейса для слежения: \n' \
                 '🔴 - мест нет, можно отслеживать\n' \
+                '🟡 - уже отслеживаете\n' \
                 '🟢 - свободные билеты есть'
         s_out = f"Список рейсов на {self._dates.get_short_info(self._date_choose)}:\n─👀──────────────\n" + \
                 '\n'.join([r.info for r in routes]) + s_out
@@ -89,23 +90,20 @@ class StepsFind(MsgControl):
 
     def s5_route_task(self, chat_id, id):
         route: Route = self._down_routes.get_route(id)
-        if route.full_car:
-            StepsTasks.check_task_mirror(chat_id, self._date_choose, self._id_city_from, self._id_city_to,
-                                         route.info_short)
-            try:
-                Look.create(id_chat=chat_id,
-                            date=self._date_choose,
-                            id_from_city=self._id_city_from,
-                            id_to_city=self._id_city_to,
-                            info=route.info_short)
-                self.b_end = True
-                return MsgAnswer('', f'Создано задание на слежение\n'
-                                     f'{route.info}.')
-            except ExceptionMsg as e:
-                return MsgAnswer('', f'{str(e)}.')
-            except Exception as e:
-                print(str(e))
-                raise Exception('Ошибка: Создания задания! Повторите ввод номера рейса!')
-        else:
-            raise Exception('Ошибка: Свободные места на рейс есть!\nВыберите другой!')
+        if not route.full_car:
+            raise ExceptionMsg('Ошибка: Свободные места на рейс есть!\nВыберите другой!')
+        self._down_routes.check_task_route(route.info_short)  # проверка рейс не на отслеживании у пользователя
+        try:
+            StepsTasks.add_task_user(chat_id, self._date_choose, self._id_city_from, self._id_city_to,
+                                     route.info_short, route.time_from)
+            self.b_end = True
+            return MsgAnswer('', f'Создано задание на слежение\n'
+                                 f'{route.info}.')
+        except ExceptionMsg as e:
+            return MsgAnswer('', f'{str(e)}.')
+        except Exception as e:
+            print(f'Ошибка: Создания задания! Повторите ввод номера рейса! {str(e)}')
+            raise ExceptionMsg('Ошибка: Создания задания! Повторите ввод номера рейса!')
+
+
 

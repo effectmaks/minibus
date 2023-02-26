@@ -1,14 +1,18 @@
 import datetime
 
-from parsing.base_sql import Look,Settings
+from parsing.base.task import Task
+from parsing.base.settings import Settings
+from parsing.base.usertask import Usertask
+
 from parsing.cities import DownloadCities
 from typing import List, Dict
 from parsing.message import MsgAnswer, MsgControl
 from parsing.dates import Dates
 from parsing.routes import DownloadRoutes
+from parsing.exception import ExceptionMsg
 
 
-class Task:
+class TaskItem:
     def __init__(self):
         self.id_base: int
         self.id_chat: str
@@ -22,36 +26,39 @@ class Task:
 class StepsTasks(MsgControl):
     def __init__(self):
         super().__init__()
-        self._dict_task_active: Dict[str, Task] = dict()
+        self._dict_task_active: Dict[str, TaskItem] = dict()
 
-    def s1_view_active(self, id_chat):
+    def s1_view_active(self, id_chat_user):
         """
         Показать все активные задачи проверки рейса
-        :param id_chat:
+        :param id_chat_user: ID чата пользователя
         :return:
         """
         try:
-            tasks = Look.select().where(Look.id_chat == id_chat).order_by(Look.date, Look.info).execute()
-            count = len(tasks)
-            for task_item, id_chat in zip(tasks, range(1, count + 1)):
-                task = self.create_info_task(id_chat, task_item.id, task_item.date,
-                                task_item.id_from_city, task_item.id_to_city,
-                                task_item.info)
+            usertasks = Usertask.select(Usertask, Task).join(Task) \
+                .where(Usertask.id_chat == id_chat_user) \
+                .order_by(Task.date, Task.info) \
+                .execute()
+            count = len(usertasks)
+            for usertask, id_chat in zip(usertasks, range(1, count + 1)):
+                task = self.create_info_task(id_chat, usertask.id, usertask.task.date,
+                                             usertask.task.id_from_city, usertask.task.id_to_city,
+                                             usertask.task.info)
                 self._dict_task_active[str(id_chat)] = task
             datetime_last_check = TimeTask.get_str()
         except Exception as e:
             print(str(e))
-            raise Exception('Ошибка: Выгрузка списка заданий!')
+            raise Exception(f'Ошибка: Выгрузка списка заданий! {str(e)}')
         if len(self._dict_task_active) == 0:
             self.b_end = True
             return MsgAnswer('', 'Нет активных заданий!')
         return MsgAnswer('', 'Ваши слежения рейсов:\n─────────────👀──\n' +
-                             '\n────────────────\n'
-                             .join([task.info_list for task in self._dict_task_active.values()]) +
-                             '\n───────────🚗──🚙─\n' +
-                             f'✅ Последняя проверка\nрейсов была в {datetime_last_check}'
-                             f'\n──────────────👀──\n'
-                             f'Введите номер слежения\nдля его удаления:')
+                         '\n────────────────\n'
+                         .join([task.info_list for task in self._dict_task_active.values()]) +
+                         '\n───────────🚗──🚙─\n' +
+                         f'✅ Последняя проверка\nрейсов была в {datetime_last_check}'
+                         f'\n──────────────👀──\n'
+                         f'Введите номер слежения\nдля его удаления:')
 
     def s2_delete_task(self, id_chat, id_list_text):
         """
@@ -60,11 +67,10 @@ class StepsTasks(MsgControl):
         """
         task_delete = self._dict_task_active.get(id_list_text)
         if not task_delete:
-            raise Exception('Ошибка: Введите число из списка!')
+            raise ExceptionMsg('Ошибка: Введите число из списка!')
         StepsTasks.delete_task(task_delete.id_base)
         self.b_end = True
         return MsgAnswer('', f'Слежение №{task_delete.id_chat} удалено!')
-
 
     def get_id_base(self, id):
         return self._dict_task_active.get(id)
@@ -74,7 +80,7 @@ class StepsTasks(MsgControl):
         Заполнить информацию о заданиях
         :return:
         """
-        task = Task()
+        task = TaskItem()
         dw_ct = DownloadCities()
         city_from = dw_ct.cities(id_city_from)
         city_to = dw_ct.cities(id_city_to)
@@ -83,6 +89,7 @@ class StepsTasks(MsgControl):
         task.id_chat = id_chat
         return task
 
+    @classmethod
     def get_tasks_have_place(cls):
         """
         Выгрузка заданий с рейсами со свободными местами
@@ -90,11 +97,12 @@ class StepsTasks(MsgControl):
         """
         try:
             print(f'Выгрузка заданий c рейсами со свободными местами')
-            return Look.select(Look.id, Look.id_chat, Look.date, Look.id_from_city,
-                               Look.id_to_city, Look.info, Look.id_msg_delete) \
-                .where(Look.have_place == True).order_by(Look.date).execute()
+            return Usertask.select()\
+                            .join(Task) \
+                            .where(Task.have_place==True) \
+                            .order_by(Task.date).execute()
         except Exception as e:
-            print(f'Ошибка выгрузки c базы. {str(e)}')
+            raise Exception(f'Ошибка выгрузки c базы. {str(e)}')
 
     @classmethod
     def get_msg_delete(cls, id_chat, id_look):
@@ -104,12 +112,12 @@ class StepsTasks(MsgControl):
         """
         try:
             print(f'Выгрузка ID сообщения которое надо удалить')
-            looks = Look.select(Look.id_msg_delete) \
-                .where(Look.id_chat == id_chat, Look.id == id_look).execute()
-            for l in looks:
-                return l.id_msg_delete
+            usertasks = Usertask.select(Usertask.id_msg_delete).join(Task) \
+                .where(Usertask.id_chat == id_chat, Task.id == id_look).execute()
+            for usertask in usertasks:
+                return usertask.id_msg_delete
         except Exception as e:
-            print(f'Ошибка выгрузки c базы. {str(e)}')
+            raise Exception(f'Ошибка выгрузки c базы Usertask. {str(e)}')
 
     @classmethod
     def update_task_msg_delete(cls, id_base, id_delete):
@@ -117,10 +125,10 @@ class StepsTasks(MsgControl):
         Обновить ID отправленного сообщения
         """
         try:
-            Look.update({Look.id_msg_delete: id_delete}) \
-                .where(Look.id == id_base).execute()
+            Usertask.update({Usertask.id_msg_delete: id_delete}) \
+                .where(Usertask.id == id_base).execute()
         except Exception as e:
-            print(f'Ошибка обновить id_base {id_base}, id_msg {id_delete} {str(e)}')
+            raise Exception(f'Ошибка обновить id_base {id_base}, id_msg {id_delete} в Usertask {str(e)}')
 
     @classmethod
     def delete_task(cls, id_base):
@@ -128,30 +136,69 @@ class StepsTasks(MsgControl):
         Удалить задание с ID
         """
         try:
-            Look.delete().where(Look.id == id_base).execute()
+            Usertask.delete().where(Usertask.id == id_base).execute()
         except Exception as e:
-            print(f'Ошибка удалить id_base {id_base} {str(e)}')
-            raise Exception(f'Ошибка: Слежение не удалено.\nПовторите ввод числа.')
+            print(f'Ошибка удалить id_base {id_base} в Usertask {str(e)}')
+            raise ExceptionMsg(f'Ошибка: Слежение не удалено.\nПовторите ввод числа.')
 
     @classmethod
-    def check_task_mirror(cls, id_chat, date, id_city_from, id_city_to, info):
+    def _get_id_task_mirror(cls, date, id_city_from, id_city_to, info, time_from):
         """
-        Проверка что пользователь выбрал, такое же задания на слежения
+        Вернуть id похожего слежения
         :return:
         """
-        look = None
+        tasks = None
         try:
-            print(f'Задание на слежение с базы которое выбрал пользователь')
-            look = Look.select(Look.id) \
-                .where(Look.id_chat == id_chat,
-                       Look.date == date,
-                       Look.id_from_city == id_city_from,
-                       Look.id_to_city == id_city_to,
-                       Look.info == info).execute()
+            print(f'Выгрузка ID похожего задания')
+            tasks = Task.select() \
+                .where(Task.date == date,
+                       Task.id_from_city == id_city_from,
+                       Task.id_to_city == id_city_to,
+                       Task.info == info,
+                       Task.time_from == time_from).execute()
         except Exception as e:
-            print(f'Ошибка выгрузки c базы. {str(e)}')
-        for _ in look:
-            raise Exception('Ошибка: Это рейс вы уже отслеживаете!\nВведите другой номер рейса.')
+            raise Exception(f'Ошибка выгрузки Task c базы. {str(e)}')
+        for task in tasks:
+            return task
+
+    @classmethod
+    def _get_id_task(cls, date, id_city_from, id_city_to, info, time_from):
+        """
+        Вернуть id похожего слежения, или создать новое
+        :return:
+        """
+        try:
+            print(f'Проверка что задание есть в базе')
+            task = cls._get_id_task_mirror(date, id_city_from, id_city_to, info, time_from)
+            if task:
+                return task
+            task = Task.create(date=date,
+                               id_from_city=id_city_from,
+                               id_to_city=id_city_to,
+                               info=info,
+                               time_from=time_from).save()
+            task = cls._get_id_task_mirror(date, id_city_from, id_city_to, info, time_from)
+            if task:
+                return task
+            else:
+                raise Exception("Ошибка: Запись с заданием в базу не добавилась!")
+        except Exception as e:
+            raise Exception(f'Ошибка создания записи. {str(e)}')
+
+    @classmethod
+    def add_task_user(cls, id_chat, date, id_city_from, id_city_to, info, time_from):
+        """
+        Добавить слежение пользователю
+        :return:
+        """
+        try:
+            print(f'Добавить слежение пользователю')
+            task = cls._get_id_task(date, id_city_from, id_city_to, info, time_from)
+            Usertask.create(id_chat=id_chat,
+                            task=task).save()
+
+        except Exception as e:
+            raise Exception(f'Ошибка создания записи Usertask. {str(e)}')
 
 
 class RunTask:
@@ -205,10 +252,10 @@ class RunTask:
         """
         try:
             print(f'Выгрузка заданий c базы на {date}')
-            return Look.select(Look.date, Look.id_from_city, Look.id_to_city, Look.info, Look.have_place).distinct() \
-                .where(Look.date == date).order_by(Look.date, Look.id_from_city).execute()
+            return Task.select(Task.date, Task.id_from_city, Task.id_to_city, Task.info, Task.have_place).distinct() \
+                .where(Task.date == date).order_by(Task.date, Task.id_from_city).execute()
         except Exception as e:
-            print(f'Ошибка выгрузки c базы. {str(e)}')
+            raise Exception(f'Ошибка выгрузки c базы. {str(e)}')
 
     @classmethod
     def _get_routes_server(cls, date, city_from, city_to):
@@ -224,7 +271,7 @@ class RunTask:
                 return routes
             print(f'Ошибка нет рейсов на {date}, {city_from}, {city_to}')
         except Exception as e:
-            print(f'Ошибка выгрузки с серера. {str(e)}')
+            raise Exception(f'Ошибка выгрузки с сервера. {str(e)}')
 
     @classmethod
     def _update_task_have_place(cls, date, city_from, city_to, info, have_place):
@@ -232,12 +279,12 @@ class RunTask:
         Обновление рейсов в базе в которых есть места
         """
         try:
-            Look.update({Look.have_place: have_place}) \
-                .where(Look.date == date, Look.id_from_city == city_from,
-                       Look.id_to_city == city_to, Look.info == info) \
+            Task.update({Task.have_place: have_place}) \
+                .where(Task.date == date, Task.id_from_city == city_from,
+                       Task.id_to_city == city_to, Task.info == info) \
                 .execute()
         except Exception as e:
-            print(f'Ошибка обновления на рейс {date}, {city_from}, {city_to}. {str(e)}')
+            raise Exception(f'Ошибка обновления на рейс {date}, {city_from}, {city_to}. {str(e)}')
 
 
 class TimeTask:
@@ -257,10 +304,10 @@ class TimeTask:
         try:
             datetime_str = datetime_check.strftime(cls.MSK_DATETIME_VIEW)
             Settings.update({Settings.value: datetime_str}) \
-                    .where(Settings.name == cls.NAME_DATETIME_TASK_CHECK) \
-                    .execute()
+                .where(Settings.name == cls.NAME_DATETIME_TASK_CHECK) \
+                .execute()
         except Exception as e:
-            print(f'Ошибка обновления поля {cls.NAME_DATETIME_TASK_CHECK}: {datetime_check} {str(e)}')
+            raise Exception(f'Ошибка обновления поля {cls.NAME_DATETIME_TASK_CHECK}: {datetime_check} {str(e)}')
 
     @classmethod
     def get_str(cls):
@@ -270,12 +317,12 @@ class TimeTask:
         """
         try:
             setting = Settings.select(Settings.value) \
-                              .where(Settings.name == cls.NAME_DATETIME_TASK_CHECK) \
-                              .execute()
+                .where(Settings.name == cls.NAME_DATETIME_TASK_CHECK) \
+                .execute()
             for s in setting:
                 return s.value[-8:]
         except Exception as e:
-            print(f'Ошибка выгрузки поля {cls.NAME_DATETIME_TASK_CHECK} {str(e)}')
+            raise Exception(f'Ошибка выгрузки поля {cls.NAME_DATETIME_TASK_CHECK} {str(e)}')
 
     @classmethod
     def add_name(cls, name):
@@ -286,10 +333,9 @@ class TimeTask:
         try:
             Settings.create(name=datetime.datetime.now().strftime('%d/%m/%y %H:%M:%S.%f'), value=name).save()
         except Exception as e:
-            print(f'Ошибка добавления имени в базу {cls.NAME_USER} {name} {str(e)}')
+            raise Exception(f'Ошибка добавления имени в базу {cls.NAME_USER} {name} {str(e)}')
 
 
 if __name__ == '__main__':
-    print(TimeTask.add_name(8523))  # запуск каждые 5 мин проверка заданий
-    # DownloadCities().download_cities_from()  # один раз в день обновлять id городов
+    RunTask.check()  # Проверка может появились новые места
     # раз в день удалять старые задания

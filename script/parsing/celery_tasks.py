@@ -25,3 +25,5 @@ def check_task():
 def download_id_cities():
     print('Обновление ID остановок')
     DownloadCities().download_cities_from()
+
+
