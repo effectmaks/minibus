@@ -4,7 +4,7 @@ from parsing.dates import Dates
 from parsing.message import MsgAnswer, MsgControl
 from parsing.exception import ExceptionMsg
 from parsing.base.task import Task
-from parsing.tasks import StepsTasks
+from parsing.steptask import StepsTasks
 
 
 class StepsFind(MsgControl):
