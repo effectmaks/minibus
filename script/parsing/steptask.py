@@ -41,10 +41,10 @@ class StepsTasks(MsgControl):
                 .execute()
             count = len(usertasks)
             for usertask, id_chat in zip(usertasks, range(1, count + 1)):
-                task = self.create_info_task(id_chat, usertask.id, usertask.task.date,
+                user_task = self.create_info_task(id_chat, usertask.id, usertask.task.date,
                                              usertask.task.id_from_city, usertask.task.id_to_city,
                                              usertask.task.info)
-                self._dict_task_active[str(id_chat)] = task
+                self._dict_task_active[str(id_chat)] = user_task
             datetime_last_check = TimeTask.get_str()
         except Exception as e:
             print(str(e))
@@ -105,7 +105,7 @@ class StepsTasks(MsgControl):
             raise Exception(f'Ошибка выгрузки c базы. {str(e)}')
 
     @classmethod
-    def get_msg_delete(cls, id_chat, id_look):
+    def get_msg_delete(cls, id_look):
         """
         ID сообщения которое надо удалить
         :return:
@@ -113,7 +113,7 @@ class StepsTasks(MsgControl):
         try:
             print(f'Выгрузка ID сообщения которое надо удалить')
             usertasks = Usertask.select(Usertask.id_msg_delete).join(Task) \
-                .where(Usertask.id_chat == id_chat, Task.id == id_look).execute()
+                .where(Usertask.id == id_look).execute()
             for usertask in usertasks:
                 return usertask.id_msg_delete
         except Exception as e:

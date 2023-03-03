@@ -1,1 +1,1 @@
-from parsing.telegram import StepsTasks
+from parsing.telegram import User

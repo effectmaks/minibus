@@ -3,9 +3,8 @@ from telebot import types
 from parsing.main import StepsFind
 from typing import Dict
 from parsing.message import MsgAnswer
-from parsing.tasks import StepsTasks
+from parsing.steptask import StepsTasks, TimeTask
 from parsing.msguser import MsgUser
-from parsing.tasks import TimeTask
 from parsing.exception import ExceptionMsg
 
 import platform

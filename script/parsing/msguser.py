@@ -30,11 +30,11 @@ class MsgUser:
                                                   usertask.task.id_from_city, usertask.task.id_to_city,
                                                   usertask.task.info)
                 print(f'Появилось место для {usertask.id_chat} {task.info}')
-                if usertask.id_msg_delete:
-                    self._delete_message(usertask.id_chat, usertask.id_msg_delete)
                 msg = self._send_button_delete(usertask.id_chat,
                                               '‼️Появилось место:‼️\n' + '🟢' + task.info, usertask.id)
                 tasks_obj.update_task_msg_delete(usertask.id, msg.id)
+                if usertask.id_msg_delete:
+                    self._delete_message(usertask.id_chat, usertask.id_msg_delete)  # удалить старое сообщение
         else:
             print('Нет маршрутов с свободными местами.')
 
@@ -52,13 +52,19 @@ class MsgUser:
         return msg
 
     def answer_user(self, id_chat, text: str):
+        """
+        Нажата кнопка удалить слежение.
+        Удаляем кнопку и слежение пользователя из базы
+        :param id_chat:
+        :param text:
+        """
         if not text.startswith(self._DELETE_TASK_MSG):
             return
-        id_base_task = text.replace(self._DELETE_TASK_MSG, '')
-        id_msg_delete = StepsTasks.get_msg_delete(id_chat, id_base_task)
+        id_base_user_task = text.replace(self._DELETE_TASK_MSG, '')
+        id_msg_delete = StepsTasks.get_msg_delete(id_base_user_task)
         if id_msg_delete:
             self._delete_message(id_chat, id_msg_delete)
-            StepsTasks.delete_task(id_base_task)
+            StepsTasks.delete_task(id_base_user_task)
 
     def _delete_message(self, id_chat, id_msg_delete):
         """
