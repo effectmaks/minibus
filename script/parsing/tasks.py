@@ -1,7 +1,7 @@
 from parsing.celery import app
 from parsing.msguser import MsgUser
-from parsing.steptask import RunTask
-from parsing.cities import DownloadCities
+from parsing.taskstep import RunTask
+from parsing.citieshtml import DownloadCities
 
 
 @app.task(name='print_test')

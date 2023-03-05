@@ -1,9 +1,22 @@
-from parsing.msguser import MsgUser
-from parsing.tasks import RunTask
-from parsing.cities import DownloadCities
+class Age:
+    def __init__(self):
+        self.a = 0
+
+
+class Javatpoint:
+    def __init__(self):
+        self._list_age = Age()
+
+    @property
+    def list_age(self):
+        return self._list_age.a
+
+    @list_age.setter
+    def list_age(self, x):
+        self._list_age.a = x
 
 
 if __name__ == '__main__':
-    #RunTask.check()  # Проверка может появились новые места
-    MsgUser().send_msg_have_place()  # Новые сообщения для пользователя - появились места
-    #DownloadCities().download_cities_from()  # Обновление ID остановок
+    John = Javatpoint()
+    John.list_age = 25
+    print(John.list_age)

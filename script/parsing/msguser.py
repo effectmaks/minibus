@@ -1,4 +1,4 @@
-from parsing.main import StepsTasks
+from parsing.routestep import StepsTasks
 
 import telebot
 from telebot import types

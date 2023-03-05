@@ -4,12 +4,12 @@ from parsing.base.task import Task
 from parsing.base.settings import Settings
 from parsing.base.usertask import Usertask
 
-from parsing.cities import DownloadCities
+from parsing.citieshtml import DownloadCities
 from typing import List, Dict
-from parsing.message import MsgAnswer, MsgControl
 from parsing.dates import Dates
-from parsing.routes import DownloadRoutes
+from parsing.routeshtml import DownloadRoutes
 from parsing.exception import ExceptionMsg
+from parsing.interface import Interface
 
 
 class TaskItem:
@@ -23,20 +23,23 @@ class TaskItem:
         return f'{self.id_chat}: {self.info}'
 
 
-class StepsTasks(MsgControl):
+class StepsTasks():
     def __init__(self):
-        super().__init__()
         self._dict_task_active: Dict[str, TaskItem] = dict()
 
-    def s1_view_active(self, id_chat_user):
+    def s1_view_active(self, interface: Interface):
         """
         Показать все активные задачи проверки рейса
-        :param id_chat_user: ID чата пользователя
-        :return:
+        """
+        self._set_msg_list_tasks_from_base(interface)
+
+    def _set_msg_list_tasks_from_base(self, interface: Interface):
+        """
+        Список заданий для пользователя
         """
         try:
             usertasks = Usertask.select(Usertask, Task).join(Task) \
-                .where(Usertask.id_chat == id_chat_user) \
+                .where(Usertask.id_chat == interface.id_chat) \
                 .order_by(Task.date, Task.info) \
                 .execute()
             count = len(usertasks)
@@ -45,32 +48,38 @@ class StepsTasks(MsgControl):
                                              usertask.task.id_from_city, usertask.task.id_to_city,
                                              usertask.task.info)
                 self._dict_task_active[str(id_chat)] = user_task
-            datetime_last_check = TimeTask.get_str()
+            self.create_msg_list_task(interface)
         except Exception as e:
-            print(str(e))
             raise Exception(f'Ошибка: Выгрузка списка заданий! {str(e)}')
-        if len(self._dict_task_active) == 0:
-            self.b_end = True
-            return MsgAnswer('', 'Нет активных заданий!')
-        return MsgAnswer('', 'Ваши слежения рейсов:\n─────────────👀──\n' +
-                         '\n────────────────\n'
-                         .join([task.info_list for task in self._dict_task_active.values()]) +
-                         '\n───────────🚗──🚙─\n' +
-                         f'✅ Последняя проверка\nрейсов была в {datetime_last_check}'
-                         f'\n──────────────👀──\n'
-                         f'Введите номер слежения\nдля его удаления:')
 
-    def s2_delete_task(self, id_chat, id_list_text):
+    def s2_delete_task(self, interface: Interface):
         """
         По выбранному номеру удаляет задание
         :return:
         """
-        task_delete = self._dict_task_active.get(id_list_text)
+        task_delete = self._dict_task_active.get(interface.msg_user)
         if not task_delete:
             raise ExceptionMsg('Ошибка: Введите число из списка!')
         StepsTasks.delete_task(task_delete.id_base)
-        self.b_end = True
-        return MsgAnswer('', f'Слежение №{task_delete.id_chat} удалено!')
+        self._dict_task_active.pop(interface.msg_user)
+        interface.msg_info.text = f'Слежение №{task_delete.id_chat} удалено!'
+        self.create_msg_list_task(interface)
+
+    def create_msg_list_task(self, interface: Interface):
+        """
+        Сообщение для пользователя со списком заданий
+        """
+        datetime_last_check = TimeTask.get_str()
+        if len(self._dict_task_active) == 0:
+            interface.b_end = True
+            interface.list_task = 'Нет активных заданий!'
+            return
+        s_out = "\n────────────────\n".join([task.info_list for task in self._dict_task_active.values()])
+        interface.list_task = f'Ваши слежения рейсов:\n─────────────👀──\n{s_out}' \
+                              f'\n───────────🚗──🚙─\n' \
+                              f'✅ Последняя проверка\nрейсов была в {datetime_last_check}' \
+                              f'\n──────────────👀──\n' \
+                              f'Введите номер слежения\nдля его удаления:'
 
     def get_id_base(self, id):
         return self._dict_task_active.get(id)

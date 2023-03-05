@@ -19,6 +19,8 @@ class DownloadCities:
             return '\n'.join(cities_list)
         else:
             cities = Cities.select().where(Cities.id == id).order_by(Cities.sort, Cities.name).execute()
+            if not cities:
+                return ""
             cities_list = [f'{c.name}' for c in cities]
             return ''.join(cities_list)
 

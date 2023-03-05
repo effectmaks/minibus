@@ -129,11 +129,15 @@ class DownloadRoutes:
         self._routes_list: List[Route] = list()
         self._dates_route: list = list()
         self._download_routes(day, id_from, id_to)
-        if id_chat:
-            self._set_point_yellow(id_chat, day, id_from, id_to)
+        self._day = day
+        self._id_from = id_from
+        self._id_to = id_to
+        self._id_chat = id_chat
 
     @property
     def list(self):
+        if self._id_chat:
+            self._set_point_yellow(self._id_chat, self._day, self._id_from, self._id_to)
         return self._routes_list
 
     @property
