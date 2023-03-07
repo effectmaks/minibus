@@ -123,8 +123,8 @@ class StepsFind:
             StepsTasks.add_task_user(interface.id_chat, self._date_choose, self._id_city_from, self._id_city_to,
                                      route.info_short, route.time_from)
             interface.msg_info.text = f'Создано задание на слежение\n{route.info}.'
-            logger.info(f'{interface.id_chat} Создано "{self._date_choose} from {self._id_city_from}'
-                        f'to {self._id_city_to} - {route.info_short}"')
+            logger.info(f'{interface.id_chat} Создано "{self._date_choose} {self._id_city_from}'
+                        f'-{self._id_city_to} {route.info_short}"')
             self._s4_city_to_print(interface)
             StepsTasks().s1_view_active_task(interface)  # обновить список заданий
         except Exception as e:

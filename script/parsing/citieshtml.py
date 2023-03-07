@@ -95,7 +95,7 @@ class DownloadCities:
         response = requests.get(f'https://xn--90aiim0b.xn--80aa3agllaqi6bg.xn--90ais/cities?city_from_id={id}')
         if response.status_code != 200:
             raise Exception('Ошибка запроса на сервер ', response.status_code)
-        logger.info('Ответ получен', response.status_code)
+        logger.info(f'Ответ получен {response.status_code}')
         data: dict = json.loads(response.text)
         out = data.values()
         if out is None:
