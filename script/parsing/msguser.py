@@ -23,7 +23,7 @@ class MsgUser:
         """
         Отправляет пользователю сообщение, если появились свободные места
         """
-        logger.info('CELERY Проверка - появились места?(во всех рейсах)')
+        logger.info('CELERY Места для пользователя появились?')
         tasks_obj = StepsTasks()
         usertasks = tasks_obj.get_tasks_have_place()
         if usertasks:

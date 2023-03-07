@@ -60,9 +60,8 @@ class Dates:
         :param week:
         :return: инфо
         """
-        return f"{date_now.strftime(self._FORMAT_DATE)} - {week}"
+        return f"{week} {date_now.strftime(self._FORMAT_DATE)}"
 
 
 if __name__ == '__main__':
-    dates = Dates()
-    print(dates.get_short_info('25.02.2023'))
+    print(Dates().get_short_info('25.02.2023'))

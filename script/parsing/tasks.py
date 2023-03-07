@@ -12,17 +12,15 @@ def print_test():
 
 @app.task(name='send_msg')  # 30 сек
 def send_msg():
-    logger.info('Новые сообщения для пользователя - появились места')
     MsgUser().send_msg_have_place()
 
 
 @app.task(name='check_task')  # 60*5 сек
 def check_task():
-    logger.info('Проверка может появились новые места')
     RunTask.check()
 
 
 @app.task(name='download_id_cities')  # 60*60*24 сек
 def download_id_cities():
-    logger.info('Обновление ID остановок')
+    logger.info('CELERY Обновление ID остановок')
     DownloadCities().download_cities_from()

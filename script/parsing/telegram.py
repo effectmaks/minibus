@@ -89,7 +89,7 @@ def send_task(message):
     delete_msg_cmd(interface)
     delete_msg_step(interface)
     delete_list_msg(interface)
-    steps_task_dict[chat_id].s1_view_active(interface)
+    steps_task_dict[chat_id].s1_view_active_task(interface)
     send_message_func(interface, s2_task)
     TimeTask.add_name(f'{message.chat.id}-{message.text}')
 
@@ -113,32 +113,32 @@ def send_route(message):
     delete_msg_cmd(interface)
     delete_msg_step(interface)
     delete_list_msg(interface)
-    steps_find_dict[chat_id].s1_date_print(interface)
+    steps_find_dict[chat_id].s1_date_print_find(interface)
     send_message_func(interface, s2_find)
     TimeTask.add_name(f'{message.chat.id}-{message.text}')
 
 
 def s2_find(message):
     chat_id = message.chat.id
-    func_step = steps_find_dict[chat_id].s2_date_check
+    func_step = steps_find_dict[chat_id].s2_date_check_find
     bot_step(message, func_step, s2_find, s3_find)
 
 
 def s3_find(message):
     chat_id = message.chat.id
-    func_step = steps_find_dict[chat_id].s3_city_from_print
+    func_step = steps_find_dict[chat_id].s3_city_from_print_find
     bot_step(message, func_step, s3_find, s4_find)
 
 
 def s4_find(message):
     chat_id = message.chat.id
-    func_step = steps_find_dict[chat_id].s4_city_to_print
+    func_step = steps_find_dict[chat_id].s4_city_to_print_find
     bot_step(message, func_step, s4_find, s5_find)
 
 
 def s5_find(message):
     chat_id = message.chat.id
-    func_step = steps_find_dict[chat_id].s5_route_task
+    func_step = steps_find_dict[chat_id].s5_route_find
     bot_step(message, func_step, s5_find, s5_find)  # зациклил
 
 

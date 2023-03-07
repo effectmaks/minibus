@@ -24,15 +24,15 @@ class TaskItem:
         return f'{self.id_chat}: {self.info}'
 
 
-class StepsTasks():
+class StepsTasks:
     def __init__(self):
         self._dict_task_active: Dict[str, TaskItem] = dict()
 
-    def s1_view_active(self, interface: Interface):
+    def s1_view_active_task(self, interface: Interface):
         """
         Показать все активные задачи проверки рейса
         """
-        logger.info('Шаг 1 StepsTasks')
+        logger.info(f'{interface.id_chat} Шаг 1 s1_view_active')
         self._set_msg_list_tasks_from_base(interface)
 
     def _set_msg_list_tasks_from_base(self, interface: Interface):
@@ -59,6 +59,7 @@ class StepsTasks():
         По выбранному номеру удаляет задание
         :return:
         """
+        logger.info(f'{interface.id_chat} Шаг 2 s2_delete_task')
         task_delete = self._dict_task_active.get(interface.msg_user)
         if not task_delete:
             raise ExceptionMsg('Ошибка: Введите число из списка!')
@@ -95,7 +96,7 @@ class StepsTasks():
         dw_ct = DownloadCities()
         city_from = dw_ct.cities(id_city_from)
         city_to = dw_ct.cities(id_city_to)
-        task.info = f'{date} {info}\n     {city_from} - {city_to}'
+        task.info = f'{Dates().get_short_info(date)} {info}\n     {city_from} - {city_to}'
         task.id_base = id_base
         task.id_chat = id_chat
         return task
@@ -205,9 +206,7 @@ class StepsTasks():
         try:
             logger.debug(f'Добавить слежение пользователю')
             task = cls._get_id_task(date, id_city_from, id_city_to, info, time_from)
-            Usertask.create(id_chat=id_chat,
-                            task=task).save()
-
+            Usertask.create(id_chat=id_chat, task=task).save()
         except Exception as e:
             raise Exception(f'Ошибка создания записи Usertask. {str(e)}')
 
@@ -221,6 +220,7 @@ class RunTask:
         Просматривает дни по наличию времени
         :return:
         """
+        logger.info('CELERY Проверка может появились новые места')
         for date in cls._get_dates():
             id_from, id_to = 0, 0
             tasks = cls._get_tasks(date)
@@ -229,7 +229,6 @@ class RunTask:
                 for task in tasks:
                     if id_from and id_to:
                         if id_from != task.id_from_city or id_to != task.id_to_city:
-                            logger.info(f"CELERY проверить места у {task.date} {task.info}")
                             routes = cls._get_routes_server(task.date, task.id_from_city, task.id_to_city)
                             id_from = task.id_from_city
                             id_to = task.id_to_city
@@ -240,11 +239,11 @@ class RunTask:
                     if routes:
                         for route in routes:
                             if task.info == route.info_short and not task.have_place and route.have_place:
-                                logger.info(f"CELERY СВОБОДНО место {task.date} {task.info} "
+                                logger.info(f"CELERY ОСВОБОДИЛОСЬ место {task.date} {task.info} "
                                              f"from {task.id_from_city} to {task.id_to_city}")
                                 cls._update_task_have_place(date, task.id_from_city, task.id_to_city, task.info, True)
                             elif task.info == route.info_short and task.have_place and not route.have_place:
-                                logger.info(f"CELERY ЗАНЯТО место {task.date} {task.info} "
+                                logger.info(f"CELERY СНОВО ЗАНЯТО место {task.date} {task.info} "
                                              f"from {task.id_from_city} to {task.id_to_city}")
                                 cls._update_task_have_place(date, task.id_from_city, task.id_to_city, task.info, False)
         TimeTask.set(datetime.datetime.now())

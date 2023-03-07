@@ -264,7 +264,7 @@ class DownloadRoutes:
         Извлечь время в пути и свободные места
         :param nf_route_one_html: HTML с полной информацией одного маршрутов
         """
-        logger.info('Извлечь время в пути и свободные места')
+        logger.debug('Извлечь время в пути и свободные места')
         info = container_html.find('div', class_='nf-route__content')
         if info is None:
             raise Exception('Не получилось извлечь route__content')

@@ -18,21 +18,22 @@ class StepsFind:
         self._id_city_to: str
         self._down_routes: DownloadRoutes
 
-    def s1_date_print(self, interface: Interface):
+    def s1_date_print_find(self, interface: Interface):
         """
         Список дат для поиска
         :return:
         """
-        logger.debug("Шаг 1 StepsFind")
+        logger.info(f'{interface.id_chat} Шаг 1 s1_date_print_find')
         interface.list_msg = f'Даты рейсов маршрутки:\n──────────────👀──\n' \
                              f'{self._dates.have_list()}\n──────👀──────────\n' \
                              f'Введите дату (например: "18"):'
 
-    def s2_date_check(self, interface: Interface):
+    def s2_date_check_find(self, interface: Interface):
         """
         Проверка выбранной даты
         :param id:
         """
+        logger.info(f'{interface.id_chat} Шаг 1 s2_date_check_find')
         self._date_choose = self._dates.get_day_dict(interface.msg_user)
         if not self._date_choose:
             raise ExceptionMsg('Ошибка: Введите число из списка!')
@@ -45,12 +46,13 @@ class StepsFind:
     def _s2_get_date_str(self):
         return f'Дата: {self._dates.get_short_info(self._date_choose)}'
 
-    def s3_city_from_print(self, interface: Interface):
+    def s3_city_from_print_find(self, interface: Interface):
         """
         Вопрос пункт выезда по ID пользователя
         :param id:
         :return:
         """
+        logger.info(f'{interface.id_chat} Шаг 3 s3_city_from_print_find')
         if not self._serv_cities.cities(interface.msg_user):
             raise ExceptionMsg('Ошибка: Введите число из списка!')
         s_out = self._serv_cities.download_cities_to(interface.msg_user)
@@ -65,7 +67,8 @@ class StepsFind:
         city_choose = self._serv_cities.cities(self._id_city_from)
         return f'Из пункта: {city_choose}'
 
-    def s4_city_to_print(self, interface: Interface):
+    def s4_city_to_print_find(self, interface: Interface):
+        logger.info(f'{interface.id_chat} Шаг 4 s4_city_to_print_find')
         self._s4_city_to_check(interface)
         self._s4_sity_download(interface)
         self._s4_city_to_print(interface)
@@ -110,8 +113,8 @@ class StepsFind:
                 '\n'.join([r.info for r in routes]) + s_out
         interface.list_msg = s_out
 
-    def s5_route_task(self, interface: Interface):
-        logger.info(f'{interface.id_chat} Выбрал номер добавления маршрута - {interface.msg_user}')
+    def s5_route_find(self, interface: Interface):
+        logger.info(f'{interface.id_chat} Шаг 5 s5_route_find')
         route: Route = self._down_routes.get_route(interface.msg_user)
         if not route.full_car:
             raise ExceptionMsg('Ошибка: Свободные места на рейс есть!\nВыберите другой!')
@@ -119,12 +122,13 @@ class StepsFind:
         try:
             StepsTasks.add_task_user(interface.id_chat, self._date_choose, self._id_city_from, self._id_city_to,
                                      route.info_short, route.time_from)
-            #interface.b_end = True
             interface.msg_info.text = f'Создано задание на слежение\n{route.info}.'
+            logger.info(f'{interface.id_chat} Создано "{self._date_choose} from {self._id_city_from}'
+                        f'to {self._id_city_to} - {route.info_short}"')
             self._s4_city_to_print(interface)
-            StepsTasks().s1_view_active(interface)  # обновить список заданий
+            StepsTasks().s1_view_active_task(interface)  # обновить список заданий
         except Exception as e:
-            logger.warning(f'Ошибка: Создания задания! Повторите ввод номера рейса! {str(e)}')
+            logger.error(f'Ошибка: Создания задания! Повторите ввод номера рейса! {str(e)}')
             raise ExceptionMsg('Ошибка: Создания задания! Повторите ввод номера рейса!')
 
 
