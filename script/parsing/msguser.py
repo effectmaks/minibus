@@ -1,3 +1,5 @@
+from parsing.log import logger
+
 from parsing.routestep import StepsTasks
 
 import telebot
@@ -21,7 +23,7 @@ class MsgUser:
         """
         Отправляет пользователю сообщение, если появились свободные места
         """
-        print('Проверка - появилось место во всех рейсах активных')
+        logger.info('CELERY Проверка - появились места?(во всех рейсах)')
         tasks_obj = StepsTasks()
         usertasks = tasks_obj.get_tasks_have_place()
         if usertasks:
@@ -29,14 +31,16 @@ class MsgUser:
                 task = tasks_obj.create_info_task(usertask.id_chat, usertask.id, usertask.task.date,
                                                   usertask.task.id_from_city, usertask.task.id_to_city,
                                                   usertask.task.info)
-                print(f'Появилось место для {usertask.id_chat} {task.info}')
+                logger.info(f'CELERY {usertask.id_chat} Появилось место для {task.info}')
                 msg = self._send_button_delete(usertask.id_chat,
                                               '‼️Появилось место:‼️\n' + '🟢' + task.info, usertask.id)
+                logger.info(f'CELERY {usertask.id_chat} Отправлено сообщение ID {msg.id}')
                 tasks_obj.update_task_msg_delete(usertask.id, msg.id)
                 if usertask.id_msg_delete:
                     self._delete_message(usertask.id_chat, usertask.id_msg_delete)  # удалить старое сообщение
+                    logger.info(f'CELERY {usertask.id_chat} Удалено сообщение ID {usertask.id_msg_delete}')
         else:
-            print('Нет маршрутов с свободными местами.')
+            logger.info('CELERY Нет маршрутов со свободными местами.')
 
     def _send_button_delete(self, id_chat, text, id_base_task):
         """
@@ -76,6 +80,7 @@ class MsgUser:
             if not self._bot:
                 self._create_link_bot()
             self._bot.delete_message(id_chat, id_msg_delete)
+            logger.info(f'{id_chat} Удалено сообщение ID {id_msg_delete}')
         except Exception as e:
             raise Exception(f'Ошибка удаления сообщения chat {id_chat} msg {id_msg_delete} {str(e)}')
 

@@ -6,7 +6,7 @@ from parsing.taskstep import StepsTasks, TimeTask
 from parsing.msguser import MsgUser
 from parsing.exception import ExceptionMsg
 from parsing.interface import Interface
-
+from parsing.log import logger
 import platform
 import enum
 
@@ -160,7 +160,7 @@ def bot_step(message, func_step, func_now, func_next):
         send_message_func(interface, func_now)
         return
     except Exception as e:
-        print('Ошибка: Разбираемся!', str(e))
+        logger.error('Ошибка: Разбираемся!', exc_info=True)
         interface.msg_info.text = 'Ошибка: Разбираемся!'
         send_message_func(interface, func_now)
         return
@@ -271,7 +271,7 @@ def delete_message(id_chat, id_msg_delete):
     try:
         bot.delete_message(id_chat, id_msg_delete)
     except Exception as e:
-        print(f'Ошибка удаления сообщения chat {id_chat} msg {id_msg_delete} {str(e)}')
+         logger.error(f'Ошибка удаления сообщения {id_chat} msg {id_msg_delete}', exc_info=True)
 
 
 def delete_msg_cmd(interface: Interface):
@@ -313,7 +313,8 @@ def click_button(call):
 
 
 bot.enable_save_next_step_handlers(delay=2)
-print("Start")
+
+logger.info("Start")
 bot.infinity_polling()
 
 # msg = bot.reply_to(message, steps_find_dict[chat_id].s1_date()) ответ на сообщение пользователя

@@ -1,3 +1,4 @@
+from parsing.log import logger
 import datetime
 
 from parsing.base.task import Task
@@ -31,6 +32,7 @@ class StepsTasks():
         """
         Показать все активные задачи проверки рейса
         """
+        logger.info('Шаг 1 StepsTasks')
         self._set_msg_list_tasks_from_base(interface)
 
     def _set_msg_list_tasks_from_base(self, interface: Interface):
@@ -105,7 +107,7 @@ class StepsTasks():
         :return:
         """
         try:
-            print(f'Выгрузка заданий c рейсами со свободными местами')
+            logger.debug(f'Выгрузка заданий c рейсами со свободными местами')
             return Usertask.select()\
                             .join(Task) \
                             .where(Task.have_place==True) \
@@ -120,7 +122,7 @@ class StepsTasks():
         :return:
         """
         try:
-            print(f'Выгрузка ID сообщения которое надо удалить')
+            logger.debug(f'Выгрузка ID сообщения которое надо удалить')
             usertasks = Usertask.select(Usertask.id_msg_delete).join(Task) \
                 .where(Usertask.id == id_look).execute()
             for usertask in usertasks:
@@ -147,7 +149,7 @@ class StepsTasks():
         try:
             Usertask.delete().where(Usertask.id == id_base).execute()
         except Exception as e:
-            print(f'Ошибка удалить id_base {id_base} в Usertask {str(e)}')
+            logger.error(f'Ошибка удалить id_base {id_base} в Usertask {str(e)}')
             raise ExceptionMsg(f'Ошибка: Слежение не удалено.\nПовторите ввод числа.')
 
     @classmethod
@@ -158,7 +160,7 @@ class StepsTasks():
         """
         tasks = None
         try:
-            print(f'Выгрузка ID похожего задания')
+            logger.debug(f'Выгрузка ID похожего задания')
             tasks = Task.select() \
                 .where(Task.date == date,
                        Task.id_from_city == id_city_from,
@@ -177,7 +179,7 @@ class StepsTasks():
         :return:
         """
         try:
-            print(f'Проверка что задание есть в базе')
+            logger.debug(f'Проверка что задание есть в базе')
             task = cls._get_id_task_mirror(date, id_city_from, id_city_to, info, time_from)
             if task:
                 return task
@@ -201,7 +203,7 @@ class StepsTasks():
         :return:
         """
         try:
-            print(f'Добавить слежение пользователю')
+            logger.debug(f'Добавить слежение пользователю')
             task = cls._get_id_task(date, id_city_from, id_city_to, info, time_from)
             Usertask.create(id_chat=id_chat,
                             task=task).save()
@@ -219,7 +221,6 @@ class RunTask:
         Просматривает дни по наличию времени
         :return:
         """
-
         for date in cls._get_dates():
             id_from, id_to = 0, 0
             tasks = cls._get_tasks(date)
@@ -228,6 +229,7 @@ class RunTask:
                 for task in tasks:
                     if id_from and id_to:
                         if id_from != task.id_from_city or id_to != task.id_to_city:
+                            logger.info(f"CELERY проверить места у {task.date} {task.info}")
                             routes = cls._get_routes_server(task.date, task.id_from_city, task.id_to_city)
                             id_from = task.id_from_city
                             id_to = task.id_to_city
@@ -237,9 +239,13 @@ class RunTask:
                         id_to = task.id_to_city
                     if routes:
                         for route in routes:
-                            if task.info == route.info_short and route.have_place:
+                            if task.info == route.info_short and not task.have_place and route.have_place:
+                                logger.info(f"CELERY СВОБОДНО место {task.date} {task.info} "
+                                             f"from {task.id_from_city} to {task.id_to_city}")
                                 cls._update_task_have_place(date, task.id_from_city, task.id_to_city, task.info, True)
                             elif task.info == route.info_short and task.have_place and not route.have_place:
+                                logger.info(f"CELERY ЗАНЯТО место {task.date} {task.info} "
+                                             f"from {task.id_from_city} to {task.id_to_city}")
                                 cls._update_task_have_place(date, task.id_from_city, task.id_to_city, task.info, False)
         TimeTask.set(datetime.datetime.now())
 
@@ -260,7 +266,7 @@ class RunTask:
         :return:
         """
         try:
-            print(f'Выгрузка заданий c базы на {date}')
+            logger.debug(f'Выгрузка заданий c базы на {date}')
             return Task.select(Task.date, Task.id_from_city, Task.id_to_city, Task.info, Task.have_place).distinct() \
                 .where(Task.date == date).order_by(Task.date, Task.id_from_city).execute()
         except Exception as e:
@@ -273,14 +279,14 @@ class RunTask:
         :return:
         """
         try:
-            print(f'Выгрузка рейсов с сервера на {date}, {city_from}, {city_to}')
+            logger.info(f'Выгрузка рейсов с сервера на {date}, {city_from}, {city_to}')
             down_routes = DownloadRoutes(date, city_from, city_to)
             routes = down_routes.list
             if routes:
                 return routes
-            print(f'Ошибка нет рейсов на {date}, {city_from}, {city_to}')
+            logger.debug(f'Ошибка нет рейсов на {date}, {city_from}, {city_to}')
         except ExceptionMsg as e:
-            print(f'{str(e)}')
+            logger.warning(str(e))
         except Exception as e:
             raise Exception(f'Ошибка выгрузки с сервера. {str(e)}')
 

@@ -1,1 +1,1 @@
-from parsing.telegram import User
+import parsing.telegram

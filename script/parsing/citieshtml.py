@@ -1,3 +1,4 @@
+from parsing.log import logger
 import requests
 from bs4 import BeautifulSoup
 import json
@@ -29,7 +30,7 @@ class DownloadCities:
         Заполнить города выезда и их id
         """
         try:
-            print('Заполнить города выезда и их id')
+            logger.debug('Заполнить города выезда и их id')
             for option in self._get_city_from_id_html():
                 id_city = option['value']
                 name_city = option.string.strip()
@@ -42,7 +43,7 @@ class DownloadCities:
         Заполнить города приезда и их id
         """
         try:
-            print('Заполнить города выезда и их id')
+            logger.debug('Заполнить города приезда и их id')
             cities = self._get_city_to_id_html(id)
             self._update_base_cities_to(cities)
             return self._sort_cities_values(cities)
@@ -55,7 +56,7 @@ class DownloadCities:
         :param option: HTML с городом
         """
         try:
-            print(f'Обновить город ID: {id_city} {name_city}')
+            logger.debug(f'Обновить город ID: {id_city} {name_city}')
             if id_city in ['', '68', 68]:
                 return
             data_count = Cities.select(Cities.name).where(Cities.id == id_city).count()
@@ -72,11 +73,11 @@ class DownloadCities:
         Страница HTML
         :return: HTML list
         """
-        print('Части HTML информацией городов')
+        logger.debug('Части HTML информацией городов')
         response = requests.get("https://xn--90aiim0b.xn--80aa3agllaqi6bg.xn--90ais/")
         if response.status_code != 200:
             raise Exception('Ошибка запроса на сервер ', response.status_code)
-        print('Ответ получен', response.status_code)
+        logger.debug(f'Ответ получен {response.status_code}')
         soup = BeautifulSoup(response.text, 'html.parser')
         select = soup.find('select', class_='js_city_from_id')
         out = select.find_all('option')
@@ -90,11 +91,11 @@ class DownloadCities:
         Страница HTML
         :return: HTML list
         """
-        print('Части HTML городов приезда по ID')
+        logger.info('Части HTML городов приезда по ID')
         response = requests.get(f'https://xn--90aiim0b.xn--80aa3agllaqi6bg.xn--90ais/cities?city_from_id={id}')
         if response.status_code != 200:
             raise Exception('Ошибка запроса на сервер ', response.status_code)
-        print('Ответ получен', response.status_code)
+        logger.info('Ответ получен', response.status_code)
         data: dict = json.loads(response.text)
         out = data.values()
         if out is None:
@@ -106,7 +107,7 @@ class DownloadCities:
         Обновить в базе города и их id
         :param cities: Города лист
         """
-        print("Обновить в базе города и их id")
+        logger.debug("Обновить в базе города и их id")
         for city in cities:
             self._update_base_city(id_city=city.get('id'), name_city=city.get('name'))
 
@@ -116,7 +117,7 @@ class DownloadCities:
         :param data: Города лист
         :return: Текст из списка городов
         """
-        print("Сортировка городов")
+        logger.debug("Сортировка городов")
         self._id_cities = [c.get('id') for c in data if c.get('id') != 68]
         cities = Cities.select().where(Cities.id << self._id_cities).order_by(Cities.sort, Cities.name).execute()
         cities_list = [f'{c.id} - {c.name}' for c in cities]

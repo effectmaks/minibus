@@ -1,3 +1,5 @@
+from parsing.log import logger
+
 from parsing.routeshtml import DownloadRoutes, Route
 from parsing.citieshtml import DownloadCities
 from parsing.dates import Dates
@@ -21,6 +23,7 @@ class StepsFind:
         Список дат для поиска
         :return:
         """
+        logger.debug("Шаг 1 StepsFind")
         interface.list_msg = f'Даты рейсов маршрутки:\n──────────────👀──\n' \
                              f'{self._dates.have_list()}\n──────👀──────────\n' \
                              f'Введите дату (например: "18"):'
@@ -108,6 +111,7 @@ class StepsFind:
         interface.list_msg = s_out
 
     def s5_route_task(self, interface: Interface):
+        logger.info(f'{interface.id_chat} Выбрал номер добавления маршрута - {interface.msg_user}')
         route: Route = self._down_routes.get_route(interface.msg_user)
         if not route.full_car:
             raise ExceptionMsg('Ошибка: Свободные места на рейс есть!\nВыберите другой!')
@@ -120,7 +124,7 @@ class StepsFind:
             self._s4_city_to_print(interface)
             StepsTasks().s1_view_active(interface)  # обновить список заданий
         except Exception as e:
-            print(f'Ошибка: Создания задания! Повторите ввод номера рейса! {str(e)}')
+            logger.warning(f'Ошибка: Создания задания! Повторите ввод номера рейса! {str(e)}')
             raise ExceptionMsg('Ошибка: Создания задания! Повторите ввод номера рейса!')
 
 

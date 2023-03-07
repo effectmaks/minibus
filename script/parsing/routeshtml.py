@@ -1,3 +1,4 @@
+from parsing.log import logger
 import requests
 from bs4 import BeautifulSoup
 import json
@@ -23,7 +24,7 @@ class Place:
         :param container_html: Страниуа с инфо маршрута
         :param mode: Режим FROM или TO
         """
-        print('Объект время и место')
+        logger.debug('Объект время и место')
         route_html = self._get_route_html(container_html, mode)
         self._time: str = self._get_time_city(route_html, 'time')
         self._city: str = self._get_time_city(route_html, 'place')
@@ -48,7 +49,7 @@ class Place:
         :param route_html: Часть с временем и местом
         :return: Место или время
         """
-        print('Извлекает время или место из HTML')
+        logger.debug('Извлекает время или место из HTML')
         part_html = route_html.find('div', class_=f'nf-route__{str_time_place}')
         if part_html is None:
             raise Exception(f'Ошибка. Не извлечь nf-route__{str_time_place}')
@@ -61,7 +62,7 @@ class Place:
         :param mode: Режим извлечения
         :return: HTML время и место
         """
-        print('Извлечь route_html')
+        logger.debug('Извлечь route_html')
         out = None
         if mode == PlaceMode.FROM:
             out = container_html.find('div', class_='nf-route__from')
@@ -165,7 +166,7 @@ class DownloadRoutes:
         Заполнить данные маршрута
         """
         try:
-            print('Заполнить данные маршрута')
+            logger.debug('Заполнить данные маршрута')
             page_html = self._get_page_html(day, id_from, id_to)
             self._parse_route(page_html)
         except ExceptionMsg as e:
@@ -204,7 +205,7 @@ class DownloadRoutes:
         Все части HTML с полной информацией всех маршрутов
         :return: HTML list
         """
-        print('Части HTML с полной информацией всех маршрутов')
+        logger.debug('Части HTML с полной информацией всех маршрутов')
         response = requests.get(f'https://xn--90aiim0b.xn--80aa3agllaqi6bg.xn--90ais/schedules?'
                                 f'station_from_id=0&station_to_id=0&'
                                 f'city_from_id={id_from}&'
@@ -212,7 +213,7 @@ class DownloadRoutes:
                                 f'date={day}&time=00%3A00&places=1')
         if response.status_code != 200:
             raise Exception('Ошибка запроса на сервер ', response.status_code)
-        print('Ответ получен', response.status_code)
+        logger.info(f'Ответ получен {response.status_code}')
         data = json.loads(response.text)
         out = BeautifulSoup(data.get("html"), 'html.parser')
         if out is None:
@@ -230,7 +231,7 @@ class DownloadRoutes:
         Все части HTML с полной информацией всех маршрутов
         :return: HTML list
         """
-        print('Части HTML с полной информацией всех маршрутов')
+        logger.debug('Части HTML с полной информацией всех маршрутов')
         out = page_html.find_all('div', class_='nf-route')
         if out == []:
             raise Exception('Ошибка, не получилось извлечь nf-route')
@@ -242,7 +243,7 @@ class DownloadRoutes:
         :param nf_route_one_html: HTML с полной информацией одного маршрута
         :return: HTML container
         """
-        print('Извлечь контайнер')
+        logger.debug('Извлечь контайнер')
         container_html = nf_route_one_html.find('div', class_='nf-route__container')
         if container_html is None:
             raise Exception('Ошибка, не получилось извлечь nf-route__container', nf_route_one_html.string)
@@ -253,9 +254,9 @@ class DownloadRoutes:
         Извлечь время и город отъезда и приезда
         :param container_html: HTML с полной информацией одного маршрутов
         """
-        print('Извлечь время и город выезда')
+        logger.debug('Извлечь время и город выезда')
         self._route_one.place_from = Place(container_html, PlaceMode.FROM)
-        print('Извлечь время и город приезда')
+        logger.debug('Извлечь время и город приезда')
         self._route_one.place_to = Place(container_html, PlaceMode.TO)
 
     def _full_duration_full_car(self, container_html):
@@ -263,16 +264,16 @@ class DownloadRoutes:
         Извлечь время в пути и свободные места
         :param nf_route_one_html: HTML с полной информацией одного маршрутов
         """
-        print('Извлечь время в пути и свободные места')
+        logger.info('Извлечь время в пути и свободные места')
         info = container_html.find('div', class_='nf-route__content')
         if info is None:
             raise Exception('Не получилось извлечь route__content')
-        print('Извлечь время в пути')
+        logger.debug('Извлечь время в пути')
         duration = info.find('div', class_='nf-route__duration')
         if duration is None:
             raise Exception('Не получилось извлечь route__content')
         self._route_one.duration = duration.string
-        print('Извлечь заполненность машины')
+        logger.debug('Извлечь заполненность машины')
         full_car = info.find('div', class_='nf-route__time')
         if full_car:
             self._route_one.full_car = full_car.string
@@ -302,7 +303,7 @@ class DownloadRoutes:
         :return:
         """
 
-        print(f'Проверить что у пользователя нет этого задания выбрал пользователь')
+        logger.debug(f'Проверить что у пользователя нет этого задания выбрал пользователь')
         for route in self._routes_list:
             if route.info_short == info_short and route.have_task:
                 raise ExceptionMsg('Ошибка: Это рейс вы уже отслеживаете!\nВведите другой номер рейса.')
