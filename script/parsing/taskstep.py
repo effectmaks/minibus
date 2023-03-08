@@ -117,6 +117,21 @@ class StepsTasks:
             raise Exception(f'Ошибка выгрузки c базы. {str(e)}')
 
     @classmethod
+    def get_tasks_have_place_id(cls, id):
+        """
+        Выгрузка заданий с рейсами со свободными местами
+        :return:
+        """
+        try:
+            logger.debug(f'Выгрузка заданий c рейсами со свободными местами')
+            return Usertask.select()\
+                           .join(Task) \
+                           .where(Usertask.id == id) \
+                           .execute()
+        except Exception as e:
+            raise Exception(f'Ошибка выгрузки c базы. {str(e)}')
+
+    @classmethod
     def get_msg_delete(cls, id_look):
         """
         ID сообщения которое надо удалить

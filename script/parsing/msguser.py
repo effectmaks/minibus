@@ -71,13 +71,29 @@ class MsgUser:
         """
         logger.info(f'{id_chat} Кнопка "Удалить уведомление" "{text}"')
         if not text.startswith(self._DELETE_TASK_MSG):
+            logger.error(f'{id_chat} Нажата кнопка удалить уведомление, должно начинаеться с "{self._DELETE_TASK_MSG}"')
             return
         id_base_user_task = text.replace(self._DELETE_TASK_MSG, '')
         id_msg_delete = StepsTasks.get_msg_delete(id_base_user_task)
         if id_msg_delete:
+            self._delete_task(id_chat, id_base_user_task, "❌Слежение удалено❌\n")
             self._delete_message(id_chat, id_msg_delete,
                                  f'{id_chat} Удалено сообщение ID {id_msg_delete}')
-            StepsTasks.delete_task(id_base_user_task)
+
+    def _delete_task(self, id_chat, id_base_user_task, msg_text):
+        """
+        Выслать сообщение удалено задание по ID usertask и удалить его с базы у пользователя
+        """
+        usertasks = StepsTasks.get_tasks_have_place_id(id_base_user_task)
+        if not usertasks:
+            logger.error(f'{id_chat} Нет в базе информации для ID_usertask{id_base_user_task}')
+            return
+        user_task = usertasks[0]
+        task = StepsTasks().create_info_task(user_task.id_chat, user_task.id, user_task.task.date,
+                                             user_task.task.id_from_city, user_task.task.id_to_city,
+                                             user_task.task.info)
+        msg = self._send_message(user_task.id_chat, f'{msg_text}🟡{task.info}', None)
+        StepsTasks.delete_task(id_base_user_task)
 
     def _delete_message(self, id_chat, id_msg_delete, msg):
         """
@@ -168,6 +184,6 @@ if __name__ == '__main__':
     load_dotenv(BASE_PATH)
 
     from parsing.taskstep import RunTask
-    RunTask._update_task_have_place("08.03.2023", 5, 23, "(12:15-14:35)", False)
+    RunTask._update_task_have_place("08.03.2023", 5, 23, "(12:15-14:35)", True)
     MsgUser().send_msg_have_place()  # Новые сообщения для пользователя - появились места
     MsgUser().send_msg_place_off()  # Если не успел удалить уведомление, а место пропало, отослать сообщение о пропуске
