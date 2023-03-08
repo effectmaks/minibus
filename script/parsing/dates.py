@@ -8,6 +8,7 @@ class Dates:
     """
     _FORMAT_DATE_TIME = '%d.%m.%Y %H:%M:%S'
     _FORMAT_TIME = '%H:%M'
+    _FORMAT_DATE = '%d.%m.%Y'
 
     def __init__(self):
         self.dict_days = dict()
@@ -73,6 +74,15 @@ class Dates:
         :return: Дата и время строка
         """
         return date_now.strftime(cls._FORMAT_DATE_TIME)
+
+    @classmethod
+    def create_date_str(cls, date_now):
+        """
+        Дата в текстовом формате
+        :param date_now:
+        :return: Дата и время строка
+        """
+        return date_now.strftime(cls._FORMAT_DATE)
 
     @classmethod
     def create_time_str(cls, datetime_str):

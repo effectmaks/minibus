@@ -10,7 +10,7 @@ class Usertask(Model):
     """
     id = IntegerField()
     id_chat = IntegerField()
-    task = ForeignKeyField(Task, db_column='task')
+    task = ForeignKeyField(Task, db_column='task', related_name='usertask')
     id_msg_delete = IntegerField()
 
     class Meta:

@@ -63,7 +63,7 @@ class StepsTasks:
         task_delete = self._dict_task_active.get(interface.msg_user)
         if not task_delete:
             raise ExceptionMsg('Ошибка: Введите число из списка!')
-        StepsTasks.delete_task(task_delete.id_base)
+        StepsTasks.delete_usertask(task_delete.id_base)
         self._dict_task_active.pop(interface.msg_user)
         interface.msg_info.text = f'Слежение №{task_delete.id_chat} удалено!'
         self.create_msg_list_task(interface)
@@ -158,14 +158,25 @@ class StepsTasks:
             raise Exception(f'Ошибка обновить id_base {id_base}, id_msg {id_delete} в Usertask {str(e)}')
 
     @classmethod
-    def delete_task(cls, id_base):
+    def delete_usertask(cls, id_base_usertask):
         """
         Удалить задание с ID
         """
         try:
-            Usertask.delete().where(Usertask.id == id_base).execute()
+            Usertask.delete().where(Usertask.id == id_base_usertask).execute()
         except Exception as e:
-            logger.error(f'Ошибка удалить id_base {id_base} в Usertask {str(e)}')
+            logger.error(f'Ошибка удалить id_base_usertask {id_base_usertask} в Usertask {str(e)}')
+            raise ExceptionMsg(f'Ошибка: Слежение не удалено.\nПовторите ввод числа.')
+
+    @classmethod
+    def delete_task(cls, id_base_task):
+        """
+        Удалить задание с ID
+        """
+        try:
+            Task.delete().where(Task.id == id_base_task).execute()
+        except Exception as e:
+            logger.error(f'Ошибка удалить id_base_task {id_base_task} в Task {str(e)}')
             raise ExceptionMsg(f'Ошибка: Слежение не удалено.\nПовторите ввод числа.')
 
     @classmethod

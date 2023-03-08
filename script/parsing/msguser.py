@@ -1,5 +1,6 @@
 import datetime
 
+from peewee import JOIN
 from parsing.log import logger
 from parsing.base.usertask import Usertask
 from parsing.base.task import Task
@@ -62,6 +63,16 @@ class MsgUser:
         msg = self._send_message(id_chat, text, markup)
         return msg
 
+    def _command_delete_msg(self, id_chat, id_base_user_task, msg):
+        """
+        Команда удалить сообщение с уведомлением, если оно есть, и отправить сообщение что оно удалено
+        """
+        self._delete_task(id_chat, id_base_user_task, msg)
+        id_msg_delete = StepsTasks.get_msg_delete(id_base_user_task)
+        if id_msg_delete:
+            self._delete_message(id_chat, id_msg_delete,
+                                 f'{id_chat} Удалено сообщение ID {id_msg_delete}')
+
     def answer_user(self, id_chat, text: str):
         """
         Нажата кнопка удалить слежение.
@@ -74,11 +85,7 @@ class MsgUser:
             logger.error(f'{id_chat} Нажата кнопка удалить уведомление, должно начинаеться с "{self._DELETE_TASK_MSG}"')
             return
         id_base_user_task = text.replace(self._DELETE_TASK_MSG, '')
-        id_msg_delete = StepsTasks.get_msg_delete(id_base_user_task)
-        if id_msg_delete:
-            self._delete_task(id_chat, id_base_user_task, "❌Слежение удалено❌\n")
-            self._delete_message(id_chat, id_msg_delete,
-                                 f'{id_chat} Удалено сообщение ID {id_msg_delete}')
+        self._command_delete_msg(id_chat, id_base_user_task, "❌Слежение удалено❌\n")
 
     def _delete_task(self, id_chat, id_base_user_task, msg_text):
         """
@@ -93,7 +100,7 @@ class MsgUser:
                                              user_task.task.id_from_city, user_task.task.id_to_city,
                                              user_task.task.info)
         msg = self._send_message(user_task.id_chat, f'{msg_text}🟡{task.info}', None)
-        StepsTasks.delete_task(id_base_user_task)
+        StepsTasks.delete_usertask(id_base_user_task)
 
     def _delete_message(self, id_chat, id_msg_delete, msg):
         """
@@ -167,7 +174,7 @@ class MsgUser:
         try:
             logger.debug(f'Выгрузка заданий c рейсами, места которых снова заняты')
             return Usertask.select()\
-                            .join(Task) \
+                           .join(Task) \
                             .where(Task.have_place == False,
                                    Task.time_on != "",
                                    Task.time_off != "",
@@ -176,14 +183,52 @@ class MsgUser:
         except Exception as e:
             raise Exception(f'Ошибка выгрузки c базы. {str(e)}')
 
+    def _get_tasks_delete(self):
+        """
+        Выгрузка заданий которые просрочены и их надо удалить
+        :return:
+        """
+        try:
+            logger.debug(f'Выгрузка заданий которые просрочены и их надо удалить')
+            date_now_str = Dates.create_date_str(datetime.datetime.now())
+            date_time_str = Dates.create_date_time_str(datetime.datetime.now())
+            time_now_str = Dates.create_time_str(date_time_str)
+            print(time_now_str+':00')
+            return Task.select(Usertask.id, Usertask.id_chat, Task.id.alias('id_task')) \
+                       .join(Usertask, JOIN.LEFT_OUTER) \
+                       .where(Task.date == date_now_str,
+                              Task.time_from < time_now_str+':00')\
+                       .order_by(Task.id) \
+                       .dicts()
+        except Exception as e:
+            raise Exception(f'Ошибка выгрузки c базы. {str(e)}')
+
+    def delete_old_tasks(self):
+        """
+        Удалить старые слежения, и сообщить это пользователю
+        """
+        usertasks = self._get_tasks_delete()
+        task_delete_prev = 0
+        for usertask in usertasks:
+            if usertask.get('id_chat') and usertask.get('id'):
+                logger.info(f'CELERY {usertask.get("id_chat")} Просрочено, удалить слежение пользователя')
+                self._command_delete_msg(usertask.get('id_chat'), usertask.get('id'),
+                                         "❌Слежение удалено❌\n🚙Маршрутка выехала\n")
+            if task_delete_prev != usertask.get('id_task'):
+                StepsTasks.delete_task(usertask.get('id_task'))
+                logger.info(f'CELERY Удалено задание task ID {usertask.get("id_task")}')
+                task_delete_prev = usertask.get('id_task')
+
 
 if __name__ == '__main__':
     BASE_PATH = '../secrets.env'
     if platform.system().startswith('L'):
         BASE_PATH = 'secrets.env'  # если запускать с Linux python3 start.py
     load_dotenv(BASE_PATH)
+    MsgUser().delete_old_tasks()
 
-    from parsing.taskstep import RunTask
-    RunTask._update_task_have_place("08.03.2023", 5, 23, "(12:15-14:35)", True)
-    MsgUser().send_msg_have_place()  # Новые сообщения для пользователя - появились места
-    MsgUser().send_msg_place_off()  # Если не успел удалить уведомление, а место пропало, отослать сообщение о пропуске
+
+    #from parsing.taskstep import RunTask
+    #RunTask._update_task_have_place("08.03.2023", 5, 23, "(12:15-14:35)", True)
+    #MsgUser().send_msg_have_place()  # Новые сообщения для пользователя - появились места
+    #MsgUser().send_msg_place_off()  # Если не успел удалить уведомление, а место пропало, отослать сообщение о пропуске
