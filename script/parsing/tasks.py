@@ -13,6 +13,7 @@ def print_test():
 @app.task(name='send_msg')  # 30 сек
 def send_msg():
     MsgUser().send_msg_have_place()
+    MsgUser().send_msg_place_off()
 
 
 @app.task(name='check_task')  # 60*5 сек

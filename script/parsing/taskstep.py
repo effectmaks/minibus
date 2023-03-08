@@ -111,7 +111,7 @@ class StepsTasks:
             logger.debug(f'Выгрузка заданий c рейсами со свободными местами')
             return Usertask.select()\
                             .join(Task) \
-                            .where(Task.have_place==True) \
+                            .where(Task.have_place == True) \
                             .order_by(Task.date).execute()
         except Exception as e:
             raise Exception(f'Ошибка выгрузки c базы. {str(e)}')

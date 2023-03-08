@@ -44,7 +44,8 @@ class MsgUser:
                 msg = self._send_button_delete(usertask.id_chat, f'🟢{msg_place}\n🟢{msg_free}\n───────────👀────\n🟢{task.info}', usertask.id)
                 tasks_obj.update_task_msg_delete(usertask.id, msg.id, False)
                 if usertask.id_msg_delete:
-                    self._delete_message(usertask.id_chat, usertask.id_msg_delete)  # удалить старое сообщение
+                    self._delete_message(usertask.id_chat, usertask.id_msg_delete,
+                                         f'CELERY id_chat {id_chat} Удалено сообщение ID {id_msg_delete}')
         else:
             logger.info('CELERY Нет маршрутов со свободными местами.')
 
@@ -68,15 +69,17 @@ class MsgUser:
         :param id_chat:
         :param text:
         """
+        logger.info(f'{id_chat} Кнопка "Удалить уведомление" "{text}"')
         if not text.startswith(self._DELETE_TASK_MSG):
             return
         id_base_user_task = text.replace(self._DELETE_TASK_MSG, '')
         id_msg_delete = StepsTasks.get_msg_delete(id_base_user_task)
         if id_msg_delete:
-            self._delete_message(id_chat, id_msg_delete)
+            self._delete_message(id_chat, id_msg_delete,
+                                 f'{id_chat} Удалено сообщение ID {id_msg_delete}')
             StepsTasks.delete_task(id_base_user_task)
 
-    def _delete_message(self, id_chat, id_msg_delete):
+    def _delete_message(self, id_chat, id_msg_delete, msg):
         """
         Удалить сообщение в чате
         :param id_chat:
@@ -86,7 +89,7 @@ class MsgUser:
             if not self._bot:
                 self._create_link_bot()
             self._bot.delete_message(id_chat, id_msg_delete)
-            logger.info(f'{id_chat} Удалено сообщение ID {id_msg_delete}')
+            logger.info(msg)
         except Exception as e:
             logger.error(f'Ошибка удаления сообщения chat {id_chat} msg {id_msg_delete}', exc_info=True)
 
@@ -135,7 +138,8 @@ class MsgUser:
 
                 tasks_obj.update_task_msg_delete(usertask.id, msg.id, True) # !!! True
                 if usertask.id_msg_delete:
-                    self._delete_message(usertask.id_chat, usertask.id_msg_delete)  # удалить старое сообщение
+                    self._delete_message(usertask.id_chat, usertask.id_msg_delete,
+                                         f'CELERY id_chat {id_chat} Удалено сообщение ID {id_msg_delete}')
         else:
             logger.info('CELERY Нет маршрутов со снова занятыми местами.')
 
