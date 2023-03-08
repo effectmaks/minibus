@@ -14,6 +14,7 @@ def print_test():
 def send_msg():
     MsgUser().send_msg_have_place()
     MsgUser().send_msg_place_off()
+    MsgUser().delete_old_tasks()
 
 
 @app.task(name='check_task')  # 60*5 сек

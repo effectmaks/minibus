@@ -207,17 +207,21 @@ class MsgUser:
         """
         Удалить старые слежения, и сообщить это пользователю
         """
+        logger.info('CELERY Появились старые задания(слежения)?')
         usertasks = self._get_tasks_delete()
-        task_delete_prev = 0
-        for usertask in usertasks:
-            if usertask.get('id_chat') and usertask.get('id'):
-                logger.info(f'CELERY {usertask.get("id_chat")} Просрочено, удалить слежение пользователя')
-                self._command_delete_msg(usertask.get('id_chat'), usertask.get('id'),
-                                         "❌Слежение удалено❌\n🚙Маршрутка выехала\n")
-            if task_delete_prev != usertask.get('id_task'):
-                StepsTasks.delete_task(usertask.get('id_task'))
-                logger.info(f'CELERY Удалено задание task ID {usertask.get("id_task")}')
-                task_delete_prev = usertask.get('id_task')
+        if usertasks:
+            task_delete_prev = 0
+            for usertask in usertasks:
+                if usertask.get('id_chat') and usertask.get('id'):
+                    logger.info(f'CELERY {usertask.get("id_chat")} Просрочено, удалить слежение пользователя')
+                    self._command_delete_msg(usertask.get('id_chat'), usertask.get('id'),
+                                             "❌Слежение удалено❌\n🚙Маршрутка выехала\n")
+                if task_delete_prev != usertask.get('id_task'):
+                    StepsTasks.delete_task(usertask.get('id_task'))
+                    logger.info(f'CELERY Удалено задание task ID {usertask.get("id_task")}')
+                    task_delete_prev = usertask.get('id_task')
+        else:
+            logger.info('CELERY Нет старых заданий.')
 
 
 if __name__ == '__main__':
