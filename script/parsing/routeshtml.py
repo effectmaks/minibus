@@ -212,8 +212,9 @@ class DownloadRoutes:
                                 f'city_to_id={id_to}&'
                                 f'date={day}&time=00%3A00&places=1')
         if response.status_code != 200:
+            logger.warning(f'Ответ получен {response.status_code} {response.text}')
             raise Exception('Ошибка запроса на сервер ', response.status_code)
-        logger.info(f'Ответ получен {response.status_code}')
+        logger.debug(f'Ответ получен {response.status_code}')
         data = json.loads(response.text)
         out = BeautifulSoup(data.get("html"), 'html.parser')
         if out is None:

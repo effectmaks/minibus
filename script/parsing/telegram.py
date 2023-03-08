@@ -73,7 +73,6 @@ def send_help(message):
                               f"{CMD_TASK} - Просмотр и удаление слежений\n"
                               f"{CMD_HELP} - Список команд\n"
                               f"{CMD_START} - Приветствие бота")
-    TimeTask.add_name(f'{message.chat.id}-{message.text}')
 
 
 @bot.message_handler(commands=['task'])

@@ -23,7 +23,7 @@ class StepsFind:
         Список дат для поиска
         :return:
         """
-        logger.info(f'{interface.id_chat} Шаг 1 s1_date_print_find')
+        logger.info(f'{interface.id_chat} Шаг s1_date_print_find "{interface.msg_user}"')
         interface.list_msg = f'Даты рейсов маршрутки:\n──────────────👀──\n' \
                              f'{self._dates.have_list()}\n──────👀──────────\n' \
                              f'Введите дату (например: "18"):'
@@ -33,7 +33,7 @@ class StepsFind:
         Проверка выбранной даты
         :param id:
         """
-        logger.info(f'{interface.id_chat} Шаг 1 s2_date_check_find')
+        logger.info(f'{interface.id_chat} Шаг s2_date_check_find "{interface.msg_user}"')
         self._date_choose = self._dates.get_day_dict(interface.msg_user)
         if not self._date_choose:
             raise ExceptionMsg('Ошибка: Введите число из списка!')
@@ -52,7 +52,7 @@ class StepsFind:
         :param id:
         :return:
         """
-        logger.info(f'{interface.id_chat} Шаг 3 s3_city_from_print_find')
+        logger.info(f'{interface.id_chat} Шаг s3_city_from_print_find "{interface.msg_user}"')
         if not self._serv_cities.cities(interface.msg_user):
             raise ExceptionMsg('Ошибка: Введите число из списка!')
         s_out = self._serv_cities.download_cities_to(interface.msg_user)
@@ -68,7 +68,7 @@ class StepsFind:
         return f'Из пункта: {city_choose}'
 
     def s4_city_to_print_find(self, interface: Interface):
-        logger.info(f'{interface.id_chat} Шаг 4 s4_city_to_print_find')
+        logger.info(f'{interface.id_chat} Шаг s4_city_to_print_find "{interface.msg_user}"')
         self._s4_city_to_check(interface)
         self._s4_sity_download(interface)
         self._s4_city_to_print(interface)
@@ -114,7 +114,7 @@ class StepsFind:
         interface.list_msg = s_out
 
     def s5_route_find(self, interface: Interface):
-        logger.info(f'{interface.id_chat} Шаг 5 s5_route_find')
+        logger.info(f'{interface.id_chat} Шаг s5_route_find "{interface.msg_user}"')
         route: Route = self._down_routes.get_route(interface.msg_user)
         if not route.full_car:
             raise ExceptionMsg('Ошибка: Свободные места на рейс есть!\nВыберите другой!')

@@ -32,7 +32,7 @@ class StepsTasks:
         """
         Показать все активные задачи проверки рейса
         """
-        logger.info(f'{interface.id_chat} Шаг 1 s1_view_active')
+        logger.info(f'{interface.id_chat} Шаг 1 s1_view_active "{interface.msg_user}"')
         self._set_msg_list_tasks_from_base(interface)
 
     def _set_msg_list_tasks_from_base(self, interface: Interface):
@@ -59,7 +59,7 @@ class StepsTasks:
         По выбранному номеру удаляет задание
         :return:
         """
-        logger.info(f'{interface.id_chat} Шаг 2 s2_delete_task')
+        logger.info(f'{interface.id_chat} Шаг 2 s2_delete_task "{interface.msg_user}"')
         task_delete = self._dict_task_active.get(interface.msg_user)
         if not task_delete:
             raise ExceptionMsg('Ошибка: Введите число из списка!')
@@ -278,7 +278,7 @@ class RunTask:
         :return:
         """
         try:
-            logger.info(f'Выгрузка рейсов с сервера на {date}, {city_from}, {city_to}')
+            logger.info(f'CELERY Выгрузка рейсов с сервера на {date}, {city_from}, {city_to}')
             down_routes = DownloadRoutes(date, city_from, city_to)
             routes = down_routes.list
             if routes:

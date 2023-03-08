@@ -76,6 +76,7 @@ class DownloadCities:
         logger.debug('Части HTML информацией городов')
         response = requests.get("https://xn--90aiim0b.xn--80aa3agllaqi6bg.xn--90ais/")
         if response.status_code != 200:
+            logger.warning(f'Ответ получен {response.status_code} {response.text}')
             raise Exception('Ошибка запроса на сервер ', response.status_code)
         logger.debug(f'Ответ получен {response.status_code}')
         soup = BeautifulSoup(response.text, 'html.parser')
