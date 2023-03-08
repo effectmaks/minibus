@@ -12,7 +12,6 @@ class Usertask(Model):
     id_chat = IntegerField()
     task = ForeignKeyField(Task, db_column='task')
     id_msg_delete = IntegerField()
-    task_off = BooleanField()
 
     class Meta:
         table_name = 'usertask'

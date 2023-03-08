@@ -42,10 +42,10 @@ class MsgUser:
                 msg_free = f'СВОБОДНО ({time_diff_str})'
                 logger.info(f'CELERY {usertask.id_chat} Появилось место {task.info}')
                 msg = self._send_button_delete(usertask.id_chat, f'🟢{msg_place}\n🟢{msg_free}\n───────────👀────\n🟢{task.info}', usertask.id)
-                tasks_obj.update_task_msg_delete(usertask.id, msg.id, False)
+                tasks_obj.update_task_msg_delete(usertask.id, msg.id)
                 if usertask.id_msg_delete:
                     self._delete_message(usertask.id_chat, usertask.id_msg_delete,
-                                         f'CELERY id_chat {id_chat} Удалено сообщение ID {id_msg_delete}')
+                                         f'CELERY id_chat {usertask.id_chat} Удалено сообщение ID {usertask.id_msg_delete}')
         else:
             logger.info('CELERY Нет маршрутов со свободными местами.')
 
@@ -136,10 +136,10 @@ class MsgUser:
                 msg = self._send_message(usertask.id_chat, f'😕{msg_place}\n😢{msg_free}\n───────────👀────\n'
                                                            f'🟡{task.info}', None)
 
-                tasks_obj.update_task_msg_delete(usertask.id, msg.id, True) # !!! True
+                tasks_obj.update_task_msg_delete(usertask.id, "")
                 if usertask.id_msg_delete:
                     self._delete_message(usertask.id_chat, usertask.id_msg_delete,
-                                         f'CELERY id_chat {id_chat} Удалено сообщение ID {id_msg_delete}')
+                                         f'CELERY id_chat {usertask.id_chat} Удалено сообщение ID {usertask.id_msg_delete}')
         else:
             logger.info('CELERY Нет маршрутов со снова занятыми местами.')
 
@@ -155,7 +155,7 @@ class MsgUser:
                             .where(Task.have_place == False,
                                    Task.time_on != "",
                                    Task.time_off != "",
-                                   Usertask.task_off == False) \
+                                   Usertask.id_msg_delete != "") \
                             .order_by(Task.date).execute()
         except Exception as e:
             raise Exception(f'Ошибка выгрузки c базы. {str(e)}')
@@ -166,5 +166,8 @@ if __name__ == '__main__':
     if platform.system().startswith('L'):
         BASE_PATH = 'secrets.env'  # если запускать с Linux python3 start.py
     load_dotenv(BASE_PATH)
+
+    from parsing.taskstep import RunTask
+    RunTask._update_task_have_place("08.03.2023", 5, 23, "(12:15-14:35)", False)
     MsgUser().send_msg_have_place()  # Новые сообщения для пользователя - появились места
-    MsgUser().send_msg_place_off() # Если не успел удалить уведомление, а место пропало, отослать сообщение о пропуске
+    MsgUser().send_msg_place_off()  # Если не успел удалить уведомление, а место пропало, отослать сообщение о пропуске

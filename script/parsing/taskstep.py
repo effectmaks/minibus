@@ -132,12 +132,12 @@ class StepsTasks:
             raise Exception(f'Ошибка выгрузки c базы Usertask. {str(e)}')
 
     @classmethod
-    def update_task_msg_delete(cls, id_base, id_delete, task_off):
+    def update_task_msg_delete(cls, id_base, id_delete):
         """
         Обновить ID отправленного сообщения
         """
         try:
-            Usertask.update({Usertask.id_msg_delete: id_delete, Usertask.task_off: task_off}) \
+            Usertask.update({Usertask.id_msg_delete: id_delete}) \
                 .where(Usertask.id == id_base).execute()
         except Exception as e:
             raise Exception(f'Ошибка обновить id_base {id_base}, id_msg {id_delete} в Usertask {str(e)}')
