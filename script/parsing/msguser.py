@@ -114,7 +114,11 @@ class MsgUser:
             self._bot.delete_message(id_chat, id_msg_delete)
             logger.info(msg)
         except Exception as e:
-            logger.error(f'Ошибка удаления сообщения chat {id_chat} msg {id_msg_delete}', exc_info=True)
+            if e.args[0] == 'A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: chat not found':
+                logger.warning(f'CELERY {id_chat} удалил бота.')
+                StepsTasks.delete_usertask_id_chat(id_chat)  # удалить все его задания из usertask
+            else:
+                logger.error(f'Ошибка удаления сообщения chat {id_chat} msg {id_msg_delete}', exc_info=True)
 
     def _send_message(self, id_chat, text, markup):
         """
@@ -130,7 +134,11 @@ class MsgUser:
             logger.info(f'CELERY {id_chat} Отправлено сообщение ID {msg.id}')
             return msg
         except Exception as e:
-            logger.error(f'Ошибка отправки сообщения chat {id_chat} msg {text}', exc_info=True)
+            if e.args[0] == 'A request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: chat not found':
+                logger.warning(f'CELERY {id_chat} удалил бота.')
+                StepsTasks.delete_usertask_id_chat(id_chat)  # удалить все его задания из usertask
+            else:
+                logger.error(f'Ошибка отправки сообщения chat {id_chat} msg {text}', exc_info=True)
 
     def _create_link_bot(self):
         """
@@ -213,7 +221,8 @@ class MsgUser:
             task_delete_prev = 0
             for usertask in usertasks:
                 if usertask.get('id_chat') and usertask.get('id'):
-                    logger.info(f'CELERY {usertask.get("id_chat")} Просрочено, удалить слежение пользователя')
+                    logger.info(f'CELERY {usertask.get("id_chat")} Просрочено task {usertask.get("id_task")},'
+                                f' удалить слежение пользователя')
                     self._command_delete_msg(usertask.get('id_chat'), usertask.get('id'),
                                              "❌Слежение удалено❌\n🚙Маршрутка выехала\n")
                 if task_delete_prev != usertask.get('id_task'):
@@ -230,7 +239,8 @@ if __name__ == '__main__':
         BASE_PATH = 'secrets.env'  # если запускать с Linux python3 start.py
     load_dotenv(BASE_PATH)
     MsgUser().delete_old_tasks()
-
+    for i in MsgUser()._get_tasks_delete():
+        print(i)
 
     #from parsing.taskstep import RunTask
     #RunTask._update_task_have_place("08.03.2023", 5, 23, "(12:15-14:35)", True)

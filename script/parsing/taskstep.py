@@ -169,9 +169,19 @@ class StepsTasks:
             raise ExceptionMsg(f'Ошибка: Слежение не удалено.\nПовторите ввод числа.')
 
     @classmethod
+    def delete_usertask_id_chat(cls, id_chat):
+        """
+        Удалить задание с id_chat
+        """
+        try:
+            Usertask.delete().where(Usertask.id_chat == id_chat).execute()
+        except Exception as e:
+            logger.error(f'Ошибка удалить id_chat {id_chat} в Usertask {str(e)}')
+
+    @classmethod
     def delete_task(cls, id_base_task):
         """
-        Удалить задание с ID
+        Удалить задание с id_base_task
         """
         try:
             Task.delete().where(Task.id == id_base_task).execute()
