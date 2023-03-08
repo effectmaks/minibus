@@ -1,6 +1,10 @@
-from parsing.log import logger
+import datetime
 
+from parsing.log import logger
+from parsing.base.usertask import Usertask
+from parsing.base.task import Task
 from parsing.routestep import StepsTasks
+from parsing.dates import Dates
 
 import telebot
 from telebot import types
@@ -31,14 +35,16 @@ class MsgUser:
                 task = tasks_obj.create_info_task(usertask.id_chat, usertask.id, usertask.task.date,
                                                   usertask.task.id_from_city, usertask.task.id_to_city,
                                                   usertask.task.info)
-                logger.info(f'CELERY {usertask.id_chat} Появилось место для {task.info}')
-                msg = self._send_button_delete(usertask.id_chat,
-                                              '‼️Появилось место:‼️\n' + '🟢' + task.info, usertask.id)
-                logger.info(f'CELERY {usertask.id_chat} Отправлено сообщение ID {msg.id}')
-                tasks_obj.update_task_msg_delete(usertask.id, msg.id)
+                time_off = Dates.create_date_time_str(datetime.datetime.now())
+                time_diff_str = Dates.get_diff_time_str(usertask.task.time_on, time_off)
+                create_time_str = Dates.create_time_str(usertask.task.time_on)
+                msg_place = f'ПОЯВИЛОСЬ место в {create_time_str} час'
+                msg_free = f'СВОБОДНО ({time_diff_str})'
+                logger.info(f'CELERY {usertask.id_chat} Появилось место {task.info}')
+                msg = self._send_button_delete(usertask.id_chat, f'🟢{msg_place}\n🟢{msg_free}\n───────────👀────\n🟢{task.info}', usertask.id)
+                tasks_obj.update_task_msg_delete(usertask.id, msg.id, False)
                 if usertask.id_msg_delete:
                     self._delete_message(usertask.id_chat, usertask.id_msg_delete)  # удалить старое сообщение
-                    logger.info(f'CELERY {usertask.id_chat} Удалено сообщение ID {usertask.id_msg_delete}')
         else:
             logger.info('CELERY Нет маршрутов со свободными местами.')
 
@@ -82,12 +88,23 @@ class MsgUser:
             self._bot.delete_message(id_chat, id_msg_delete)
             logger.info(f'{id_chat} Удалено сообщение ID {id_msg_delete}')
         except Exception as e:
-            raise Exception(f'Ошибка удаления сообщения chat {id_chat} msg {id_msg_delete} {str(e)}')
+            logger.error(f'Ошибка удаления сообщения chat {id_chat} msg {id_msg_delete}', exc_info=True)
 
     def _send_message(self, id_chat, text, markup):
-        if not self._bot:
-            self._create_link_bot()
-        return self._bot.send_message(id_chat, text, reply_markup=markup)
+        """
+        Отправить сообщение пользователю
+        """
+        try:
+            if not self._bot:
+                self._create_link_bot()
+            if markup:
+                msg = self._bot.send_message(id_chat, text, reply_markup=markup)
+            else:
+                msg = self._bot.send_message(id_chat, text)
+            logger.info(f'CELERY {id_chat} Отправлено сообщение ID {msg.id}')
+            return msg
+        except Exception as e:
+            logger.error(f'Ошибка отправки сообщения chat {id_chat} msg {text}', exc_info=True)
 
     def _create_link_bot(self):
         """
@@ -96,6 +113,49 @@ class MsgUser:
         """
         self._bot = telebot.TeleBot(self._API_TOKEN)
 
+    def send_msg_place_off(self):
+        """
+        Если не успел удалить уведомление, а место пропало, отослать сообщение о пропуске
+        """
+        logger.info('CELERY Если не успел удалить уведомление, а место пропало, отослать сообщение о пропуске')
+        tasks_obj = StepsTasks()
+        usertasks = self._get_tasks_place_off()
+        if usertasks:
+            for usertask in usertasks:
+                task = tasks_obj.create_info_task(usertask.id_chat, usertask.id, usertask.task.date,
+                                                  usertask.task.id_from_city, usertask.task.id_to_city,
+                                                  usertask.task.info)
+                time_diff_str = Dates.get_diff_time_str(usertask.task.time_on, usertask.task.time_off)
+                create_time_str = Dates.create_time_str(usertask.task.time_on)
+                logger.info(f'CELERY {usertask.id_chat} Место снова занято {task.info}')
+                msg_place = f'Место освободилось в {create_time_str} час'
+                msg_free = f'{time_diff_str} было свободно'
+                msg = self._send_message(usertask.id_chat, f'😕{msg_place}\n😢{msg_free}\n───────────👀────\n'
+                                                           f'🟡{task.info}', None)
+
+                tasks_obj.update_task_msg_delete(usertask.id, msg.id, True) # !!! True
+                if usertask.id_msg_delete:
+                    self._delete_message(usertask.id_chat, usertask.id_msg_delete)  # удалить старое сообщение
+        else:
+            logger.info('CELERY Нет маршрутов со снова занятыми местами.')
+
+    def _get_tasks_place_off(self):
+        """
+        Выгрузка заданий с рейсами, места которых снова заняты
+        :return:
+        """
+        try:
+            logger.debug(f'Выгрузка заданий c рейсами, места которых снова заняты')
+            return Usertask.select()\
+                            .join(Task) \
+                            .where(Task.have_place == False,
+                                   Task.time_on != "",
+                                   Task.time_off != "",
+                                   Usertask.task_off == False) \
+                            .order_by(Task.date).execute()
+        except Exception as e:
+            raise Exception(f'Ошибка выгрузки c базы. {str(e)}')
+
 
 if __name__ == '__main__':
     BASE_PATH = '../secrets.env'
@@ -103,3 +163,4 @@ if __name__ == '__main__':
         BASE_PATH = 'secrets.env'  # если запускать с Linux python3 start.py
     load_dotenv(BASE_PATH)
     MsgUser().send_msg_have_place()  # Новые сообщения для пользователя - появились места
+    MsgUser().send_msg_place_off() # Если не успел удалить уведомление, а место пропало, отослать сообщение о пропуске

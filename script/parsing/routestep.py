@@ -114,7 +114,7 @@ class StepsFind:
         interface.list_msg = s_out
 
     def s5_route_find(self, interface: Interface):
-        logger.info(f'{interface.id_chat} Шаг s5_route_find "{interface.msg_user}"')
+        logger.info(f'{interface.id_chat} Шаг s5_route_find "{interface.msg_user}"  ')
         route: Route = self._down_routes.get_route(interface.msg_user)
         if not route.full_car:
             raise ExceptionMsg('Ошибка: Свободные места на рейс есть!\nВыберите другой!')

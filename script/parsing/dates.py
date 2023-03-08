@@ -6,6 +6,9 @@ class Dates:
     """
     Даты по которым можно найти маршруты
     """
+    _FORMAT_DATE_TIME = '%d.%m.%Y %H:%M:%S'
+    _FORMAT_TIME = '%H:%M'
+
     def __init__(self):
         self.dict_days = dict()
         self._FORMAT_DATE = '%d.%m.%Y'
@@ -62,6 +65,48 @@ class Dates:
         """
         return f"{week} {date_now.strftime(self._FORMAT_DATE)}"
 
+    @classmethod
+    def create_date_time_str(cls, date_now):
+        """
+        Дата и время в текстовом формате
+        :param date_now:
+        :return: Дата и время строка
+        """
+        return date_now.strftime(cls._FORMAT_DATE_TIME)
+
+    @classmethod
+    def create_time_str(cls, datetime_str):
+        """
+        Время в текстовом формате
+        :param date_now:
+        :return: время строка
+        """
+        datetime_d = datetime.strptime(datetime_str, cls._FORMAT_DATE_TIME)
+        return datetime_d.strftime(cls._FORMAT_TIME)
+
+    @classmethod
+    def get_diff_time_str(cls, time_on_str, time_off_str):
+        """
+        Дата и время в текстовом формате.
+        Вычисляет разницу в часах и минутах
+        :return: Разница времен строка
+        """
+        time_on = datetime.strptime(time_on_str, cls._FORMAT_DATE_TIME)
+        time_off = datetime.strptime(time_off_str, cls._FORMAT_DATE_TIME)
+        time_diff = time_off - time_on
+        date_time_str = str(time_diff)
+        date_time_str = date_time_str[-8:]
+        hour = date_time_str[:2]
+        min = date_time_str[-5:-3]
+        hour = hour.replace(':', '')
+        if hour == '0':
+            return f'{min} мин'
+        else:
+            return f'{hour} час {min} мин'
+
 
 if __name__ == '__main__':
-    print(Dates().get_short_info('25.02.2023'))
+    #print(Dates().get_short_info('25.02.2023'))
+    #print(Dates.create_date_time_str(datetime.now()))
+    #print(Dates.get_diff_time_str("5.03.2023 12:55:34", "5.03.2023 15:50:34", ))
+    print(Dates.create_time_str("5.03.2023 12:55:34"))

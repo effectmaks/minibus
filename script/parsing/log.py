@@ -18,7 +18,6 @@ logging.basicConfig(level=level, format=log_format,
 
 logger = logging.getLogger(FILE_PATH)
 
-logger.info(f"Testing logger {FILE_PATH}...")
 """
 
 

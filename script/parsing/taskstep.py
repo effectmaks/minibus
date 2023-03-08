@@ -132,12 +132,12 @@ class StepsTasks:
             raise Exception(f'Ошибка выгрузки c базы Usertask. {str(e)}')
 
     @classmethod
-    def update_task_msg_delete(cls, id_base, id_delete):
+    def update_task_msg_delete(cls, id_base, id_delete, task_off):
         """
         Обновить ID отправленного сообщения
         """
         try:
-            Usertask.update({Usertask.id_msg_delete: id_delete}) \
+            Usertask.update({Usertask.id_msg_delete: id_delete, Usertask.task_off: task_off}) \
                 .where(Usertask.id == id_base).execute()
         except Exception as e:
             raise Exception(f'Ошибка обновить id_base {id_base}, id_msg {id_delete} в Usertask {str(e)}')
@@ -295,7 +295,12 @@ class RunTask:
         Обновление рейсов в базе в которых есть места
         """
         try:
-            Task.update({Task.have_place: have_place}) \
+            date_time_str = Dates.create_date_time_str(datetime.datetime.now())
+            if have_place:
+                update_data = {Task.have_place: True, Task.time_on: date_time_str, Task.time_off: "", }
+            else:
+                update_data = {Task.have_place: False, Task.time_off: date_time_str, }
+            Task.update(update_data) \
                 .where(Task.date == date, Task.id_from_city == city_from,
                        Task.id_to_city == city_to, Task.info == info) \
                 .execute()
@@ -353,5 +358,5 @@ class TimeTask:
 
 
 if __name__ == '__main__':
-    RunTask.check()  # Проверка может появились новые места
-    # раз в день удалять старые задания
+    #RunTask.check()  # Проверка может появились новые места
+    RunTask._update_task_have_place("08.03.2023", 5, 23, "(12:15-14:35)", True)
