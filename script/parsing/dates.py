@@ -116,7 +116,8 @@ class Dates:
 
 
 if __name__ == '__main__':
+    pass
     #print(Dates().get_short_info('25.02.2023'))
     #print(Dates.create_date_time_str(datetime.now()))
     #print(Dates.get_diff_time_str("5.03.2023 12:55:34", "5.03.2023 15:50:34", ))
-    print(Dates.create_time_str("5.03.2023 12:55:34"))
+    #print(Dates.create_time_str("5.03.2023 12:55:34"))
