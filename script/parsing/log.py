@@ -1,7 +1,7 @@
-import os
 import platform
 import logging
 from logging.handlers import TimedRotatingFileHandler
+import os
 
 
 FILE_PATH = '../logs/py_log_debug.log'
@@ -9,6 +9,11 @@ level = logging.DEBUG
 if platform.system().startswith('L'):
     FILE_PATH = 'logs/py_log.log'  # если запускать с Linux python3 start.py
     level = logging.INFO
+
+# Проверяем наличие папки по пути FILE_PATH и создаем её при отсутствии
+dir_path = os.path.dirname(FILE_PATH)  # получаем путь к папке из FILE_PATH
+if not os.path.exists(dir_path):  # если такой папки нет
+    os.mkdir(dir_path)  # создаем её
 
 # Проверяем наличие файла по пути FILE_PATH и создаем его при отсутствии
 if not os.path.exists(FILE_PATH):
