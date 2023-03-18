@@ -201,7 +201,6 @@ class MsgUser:
             date_now_str = Dates.create_date_str(datetime.datetime.now())
             date_time_str = Dates.create_date_time_str(datetime.datetime.now())
             time_now_str = Dates.create_time_str(date_time_str)
-            print(time_now_str+':00')
             return Task.select(Usertask.id, Usertask.id_chat, Task.id.alias('id_task')) \
                        .join(Usertask, JOIN.LEFT_OUTER) \
                        .where(Task.date == date_now_str,

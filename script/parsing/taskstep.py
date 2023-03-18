@@ -359,6 +359,7 @@ class TimeTask:
         :param datetime_check: Время класса datetime
         """
         try:
+            logger.info(f'CELERY время проверки {datetime_check}')
             datetime_str = datetime_check.strftime(cls.MSK_DATETIME_VIEW)
             Settings.update({Settings.value: datetime_str}) \
                 .where(Settings.name == cls.NAME_DATETIME_TASK_CHECK) \
