@@ -1,5 +1,6 @@
 import platform
 import logging
+from logging.handlers import TimedRotatingFileHandler
 
 
 FILE_PATH = '../logs/py_log_debug.log'
@@ -11,8 +12,11 @@ if platform.system().startswith('L'):
 log_format = "%(asctime)s-%(levelname)s: %(message)s"
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(level)
+
+file_handler = TimedRotatingFileHandler(FILE_PATH, when='midnight', backupCount=10)
+file_handler.setFormatter(logging.Formatter(log_format))
 logging.basicConfig(level=level, format=log_format,
-                    handlers=[logging.FileHandler(FILE_PATH, mode='a'),
+                    handlers=[file_handler,
                               stream_handler]
                     )
 

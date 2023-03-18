@@ -67,8 +67,8 @@ class MsgUser:
         """
         Команда удалить сообщение с уведомлением, если оно есть, и отправить сообщение что оно удалено
         """
-        self._delete_task(id_chat, id_base_user_task, msg)
         id_msg_delete = StepsTasks.get_msg_delete(id_base_user_task)
+        self._delete_task(id_chat, id_base_user_task, msg)
         if id_msg_delete:
             self._delete_message(id_chat, id_msg_delete,
                                  f'{id_chat} Удалено сообщение ID {id_msg_delete}')

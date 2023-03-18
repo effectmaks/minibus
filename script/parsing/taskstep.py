@@ -394,5 +394,5 @@ class TimeTask:
 
 
 if __name__ == '__main__':
-    #RunTask.check()  # Проверка может появились новые места
-    RunTask._update_task_have_place("08.03.2023", 5, 23, "(12:15-14:35)", True)
+    RunTask.check()  # Проверка может появились новые места
+    #RunTask._update_task_have_place("08.03.2023", 5, 23, "(12:15-14:35)", True)
