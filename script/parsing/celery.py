@@ -2,7 +2,7 @@ from celery import Celery
 import logging
 from celery.handlers.logging import TaskHandler
 from dotenv import load_dotenv
-from parsing.log import logger, log_format, FILE_PATH, level
+from parsing.log import logger, log_format, FILE_PATH
 import os
 
 load_dotenv('secrets.env')
