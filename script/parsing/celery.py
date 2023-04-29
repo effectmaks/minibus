@@ -37,6 +37,3 @@ app.conf.beat_schedule = {
     },
 }
 
-task_handler = TaskHandler()
-task_handler.setLevel(level)
-logger.addHandler(task_handler)
