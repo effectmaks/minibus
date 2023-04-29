@@ -1,8 +1,9 @@
 from celery import Celery
 import logging
-from celery.signals import after_setup_logger
+from celery.utils.log import get_task_logger
+from celery.handlers.logging import TaskHandler
 from dotenv import load_dotenv
-from parsing.log import logger, log_format, FILE_PATH
+from parsing.log import logger, log_format, FILE_PATH, level
 import os
 
 load_dotenv('secrets.env')
@@ -37,17 +38,6 @@ app.conf.beat_schedule = {
     },
 }
 
-#https://distributedpython.com/posts/three-ideas-to-customise-celery-logging-handlers/
-@after_setup_logger.connect
-def setup_loggers(*args, **kwargs):
-    formatter = logging.Formatter(log_format)
-
-    # StreamHandler
-    sh = logging.StreamHandler()
-    sh.setFormatter(formatter)
-    logger.addHandler(sh)
-
-    # FileHandler
-    fh = logging.FileHandler(FILE_PATH)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
+task_handler = TaskHandler()
+task_handler.setLevel(level)
+logger.addHandler(task_handler)
