@@ -1,5 +1,6 @@
 from celery import Celery
 import logging
+from celery.signals import after_setup_logger
 from dotenv import load_dotenv
 from parsing.log import logger, log_format, FILE_PATH
 import os
@@ -36,3 +37,14 @@ app.conf.beat_schedule = {
     },
 }
 
+formatter = logging.Formatter(log_format)
+
+# StreamHandler
+sh = logging.StreamHandler()
+sh.setFormatter(formatter)
+logger.addHandler(sh)
+
+# FileHandler
+fh = logging.FileHandler(FILE_PATH)
+fh.setFormatter(formatter)
+logger.addHandler(fh)
