@@ -1,6 +1,5 @@
 from celery import Celery
 import logging
-from celery.utils.log import get_task_logger
 from celery.handlers.logging import TaskHandler
 from dotenv import load_dotenv
 from parsing.log import logger, log_format, FILE_PATH, level
