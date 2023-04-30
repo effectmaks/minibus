@@ -28,7 +28,7 @@ class MsgUser:
         """
         Отправляет пользователю сообщение, если появились свободные места
         """
-        logger.info('CELERY Места для пользователя появились?')
+        logger.info('Места для пользователя появились?')
         tasks_obj = StepsTasks()
         usertasks = tasks_obj.get_tasks_have_place()
         if usertasks:
@@ -48,7 +48,7 @@ class MsgUser:
                     self._delete_message(usertask.id_chat, usertask.id_msg_delete,
                                          f'CELERY id_chat {usertask.id_chat} Удалено сообщение ID {usertask.id_msg_delete}')
         else:
-            logger.info('CELERY Нет маршрутов со свободными местами.')
+            logger.info('Нет маршрутов со свободными местами.')
 
     def _send_button_delete(self, id_chat, text, id_base_task):
         """
@@ -151,7 +151,7 @@ class MsgUser:
         """
         Если не успел удалить уведомление, а место пропало, отослать сообщение о пропуске
         """
-        logger.info('CELERY Если не успел удалить уведомление, а место пропало, отослать сообщение о пропуске')
+        logger.info('Если не успел удалить уведомление, а место пропало, отослать сообщение о пропуске')
         tasks_obj = StepsTasks()
         usertasks = self._get_tasks_place_off()
         if usertasks:
@@ -172,7 +172,7 @@ class MsgUser:
                     self._delete_message(usertask.id_chat, usertask.id_msg_delete,
                                          f'CELERY id_chat {usertask.id_chat} Удалено сообщение ID {usertask.id_msg_delete}')
         else:
-            logger.info('CELERY Нет маршрутов со снова занятыми местами.')
+            logger.info('Нет маршрутов со снова занятыми местами.')
 
     def _get_tasks_place_off(self):
         """
@@ -214,7 +214,7 @@ class MsgUser:
         """
         Удалить старые слежения, и сообщить это пользователю
         """
-        logger.info('CELERY Появились старые задания(слежения)?')
+        logger.info('Появились старые задания(слежения)?')
         usertasks = self._get_tasks_delete()
         if usertasks:
             task_delete_prev = 0
@@ -229,7 +229,7 @@ class MsgUser:
                     logger.info(f'CELERY Удалено задание task ID {usertask.get("id_task")}')
                     task_delete_prev = usertask.get('id_task')
         else:
-            logger.info('CELERY Нет старых заданий.')
+            logger.info('Нет старых заданий.')
 
 
 if __name__ == '__main__':

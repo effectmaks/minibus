@@ -256,7 +256,7 @@ class RunTask:
         Просматривает дни по наличию времени
         :return:
         """
-        logger.info('CELERY Проверка может появились новые места')
+        logger.info('Проверка может появились новые места')
         for date in cls._get_dates():
             id_from, id_to = 0, 0
             tasks = cls._get_tasks(date)

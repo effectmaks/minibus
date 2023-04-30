@@ -17,10 +17,6 @@ app: Celery = Celery('parsing', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_
 app.autodiscover_tasks(['parsing'])
 
 app.conf.beat_schedule = {
-    'print_test-5-seconds': {
-        'task': 'print_test',
-        'schedule': 10.0,
-    },
     'send_msg-30-seconds': {
         'task': 'send_msg',
         'schedule': 30.0,

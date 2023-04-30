@@ -5,11 +5,6 @@ from parsing.taskstep import RunTask
 from parsing.citieshtml import DownloadCities
 
 
-@app.task(name='print_test')
-def print_test():
-    logger.info('Celery work!')
-
-
 @app.task(name='send_msg')  # 30 сек
 def send_msg():
     MsgUser().send_msg_have_place()
@@ -24,5 +19,5 @@ def check_task():
 
 @app.task(name='download_id_cities')  # 60*60*24 сек
 def download_id_cities():
-    logger.info('CELERY Обновление ID остановок')
+    logger.info('Обновление ID остановок')
     DownloadCities().download_cities_from()
