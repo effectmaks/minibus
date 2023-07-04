@@ -78,16 +78,28 @@ class Route:
         self.place_from: Place
         self.place_to: Place
         self.duration: str
-        self.full_car: str = ""
+        self._full_car: str = ""
         self.id: str = ""
         self.have_task: bool = False
+
+    @property
+    def full_car(self):
+        return self._full_car
+
+    @full_car.setter
+    def full_car(self, full):
+        if full == "нет свободных мест":
+            self._full_car = ""
+        else:
+            self._full_car = full
 
     @property
     def info(self):
         close = '🟢'
         if self.have_task:
             close = "🟡"
-        elif self.full_car:
+        elif self._full_car:
+            print(self._full_car)
             close = "🔴"
         return f'{self.id if int(self.id) > 9 else " " + self.id} : {close} ' \
                f'{self.place_from.time}-{self.place_to.time} ({self.duration})'
@@ -107,7 +119,7 @@ class Route:
 
     @property
     def have_place(self):
-        if not self.full_car:
+        if not self._full_car:
             return True
 
 
@@ -215,6 +227,7 @@ class DownloadRoutes:
             logger.warning(f'Ответ получен {response.status_code} {response.text}')
             raise Exception('Ошибка запроса на сервер ', response.status_code)
         logger.debug(f'Ответ получен {response.status_code}')
+        logger.debug(f'Ответ получен {response.text}')
         data = json.loads(response.text)
         out = BeautifulSoup(data.get("html"), 'html.parser')
         if out is None:
