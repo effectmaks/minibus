@@ -99,7 +99,6 @@ class Route:
         if self.have_task:
             close = "🟡"
         elif self._full_car:
-            print(self._full_car)
             close = "🔴"
         return f'{self.id if int(self.id) > 9 else " " + self.id} : {close} ' \
                f'{self.place_from.time}-{self.place_to.time} ({self.duration})'
