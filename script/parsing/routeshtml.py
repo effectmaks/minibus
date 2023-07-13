@@ -89,9 +89,9 @@ class Route:
     @full_car.setter
     def full_car(self, full):
         if full == "нет свободных мест":
-            self._full_car = ""
-        else:
             self._full_car = full
+        else:
+            self._full_car = ""
 
     @property
     def info(self):
